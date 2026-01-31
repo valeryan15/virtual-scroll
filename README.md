@@ -8,6 +8,7 @@ React + TypeScript библиотека для рендеринга больши
 - Конфигурируемые размеры контейнера.
 - Overscan для более плавного скролла.
 - Storybook для документации и Jest для тестов.
+- Prettier для форматирования, TSLint для lint-проверок, Husky для git-хуков.
 
 ## Установка
 
@@ -20,8 +21,18 @@ npm install
 ```bash
 npm run dev
 npm run build
+npm run lint
+npm run format
+npm run format:check
 npm run test
 npm run storybook
+```
+
+## Husky
+
+```bash
+npm run prepare
+chmod +x .husky/pre-commit
 ```
 
 ## Использование

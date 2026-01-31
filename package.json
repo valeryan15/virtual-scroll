@@ -22,9 +22,13 @@
     "build": "vite build && tsc -p tsconfig.build.json",
     "preview": "vite preview",
     "typecheck": "tsc -p tsconfig.json --noEmit",
+    "lint": "tslint -p tsconfig.json -c tslint.json",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
     "test": "jest --config jest.config.ts",
     "storybook": "storybook dev -p 6006",
-    "build-storybook": "storybook build"
+    "build-storybook": "storybook build",
+    "prepare": "husky install"
   },
   "dependencies": {
     "react": "latest",
@@ -45,7 +49,10 @@
     "jest": "latest",
     "ts-jest": "latest",
     "ts-node": "latest",
+    "tslint": "latest",
     "typescript": "latest",
-    "vite": "latest"
+    "vite": "latest",
+    "prettier": "latest",
+    "husky": "latest"
   }
 }
