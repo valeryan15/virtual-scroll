@@ -20,7 +20,7 @@ React + TypeScript библиотека для рендеринга больши
 
 ```bash
 nvm use
-npm install
+yarn install
 ```
 
 `nvm use` использует версию из `.nvmrc`.
@@ -28,13 +28,13 @@ npm install
 ## Скрипты
 
 ```bash
-npm run dev
-npm run build
-npm run lint
-npm run format
-npm run format:check
-npm run test
-npm run storybook
+yarn run dev
+yarn run build
+yarn run lint
+yarn run format
+yarn run format:check
+yarn run test
+yarn run storybook
 ```
 
 ## Husky
@@ -42,27 +42,4 @@ npm run storybook
 ```bash
 npm run prepare
 chmod +x .husky/pre-commit
-```
-
-## Использование
-
-```tsx
-import { VirtualScroll } from "virtual-scroll";
-
-const items = Array.from({ length: 1000 }, (_, index) => (
-  <div key={index} style={{ height: 40 }}>
-    Row {index + 1}
-  </div>
-));
-
-export function Example() {
-  return (
-    <VirtualScroll
-      items={items}
-      itemHeight={40}
-      height={320}
-      overscan={3}
-    />
-  );
-}
 ```

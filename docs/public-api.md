@@ -18,8 +18,8 @@ type VirtualListProps<T> = {
   layout?: {
     direction?: 'vertical' | 'horizontal';
     sizeMode?: 'fixed' | 'dynamic';
-    itemSize?: number;           // required for fixed
-    estimatedItemSize?: number;  // required for dynamic
+    itemSize?: number; // required for fixed
+    estimatedItemSize?: number; // required for dynamic
   };
 
   /** Окно рендера */
@@ -27,7 +27,7 @@ type VirtualListProps<T> = {
 
   /** Sticky (для List обычно top/bottom) */
   sticky?: {
-    top?: number;    // count of sticky items
+    top?: number; // count of sticky items
     bottom?: number; // count of sticky items
     renderStickyTop?: (args: { items: readonly T[] }) => React.ReactNode;
     renderStickyBottom?: (args: { items: readonly T[] }) => React.ReactNode;
@@ -44,9 +44,7 @@ type VirtualListProps<T> = {
   };
 
   /** События виртуализации */
-  onRangeChange?: (range: {
-    items: { start: number; end: number };
-  }) => void;
+  onRangeChange?: (range: { items: { start: number; end: number } }) => void;
 
   /** Отладка/расширения */
   className?: string;
@@ -99,9 +97,7 @@ type VirtualGridProps<Cell> = {
 Где:
 
 ```ts
-type AxisConfig =
-  | { sizeMode: 'fixed'; itemSize: number }
-  | { sizeMode: 'dynamic'; estimatedItemSize: number };
+type AxisConfig = { sizeMode: 'fixed'; itemSize: number } | { sizeMode: 'dynamic'; estimatedItemSize: number };
 
 type StickyGridConfig = {
   top?: number;
@@ -157,8 +153,8 @@ type VirtualTableProps<Row> = {
   renderBodyCell: (args: { row: Row; rowIndex: number; columnId: string; columnIndex: number }) => React.ReactNode;
 
   layout?: {
-    rowHeight?: AxisConfig;       // fixed/dynamic
-    columnWidth?: AxisConfig;     // fixed/dynamic
+    rowHeight?: AxisConfig; // fixed/dynamic
+    columnWidth?: AxisConfig; // fixed/dynamic
   };
 
   sticky?: { header?: boolean; leftColumns?: number };
@@ -240,8 +236,8 @@ export function useVirtualList<T>(args: {
   onRangeChange?: (range: { start: number; end: number }) => void;
 }): {
   totalSize: number;
-  items: VirtualItem[];      // только видимые (с overscan)
-  offset: number;            // offset первого элемента
+  items: VirtualItem[]; // только видимые (с overscan)
+  offset: number; // offset первого элемента
   scrollToIndex: (index: number, options?: ScrollToIndexOptions) => void;
 
   /** динамические размеры: регистрация измерений */
@@ -356,13 +352,13 @@ export type {
 
 1. **High-level компоненты + headless hooks**
 
-* Даёт быстрый старт и гибкость интеграций.
-* Избегает “одного компонента на все случаи”.
+- Даёт быстрый старт и гибкость интеграций.
+- Избегает “одного компонента на все случаи”.
 
 2. **Dynamic sizing — через explicit `estimatedItemSize`**
 
-* Без этого API становится “магическим” и нестабильным.
+- Без этого API становится “магическим” и нестабильным.
 
 3. **Sticky выделены в отдельную конфигурацию**
 
-* Прямо отражает архитектурное решение ADR-001 (sticky — отдельные слои).
+- Прямо отражает архитектурное решение ADR-001 (sticky — отдельные слои).

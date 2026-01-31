@@ -1,5 +1,5 @@
-import type { ReactNode, UIEvent } from "react";
-import { useMemo, useState } from "react";
+import type { ReactNode, UIEvent } from 'react';
+import { useMemo, useState } from 'react';
 
 export type VirtualScrollProps = {
   items: ReactNode[];
@@ -14,9 +14,9 @@ export function VirtualScroll({
   items,
   itemHeight,
   height,
-  width = "100%",
+  width = '100%',
   overscan = 2,
-  className
+  className,
 }: VirtualScrollProps) {
   const [scrollTop, setScrollTop] = useState(0);
 
@@ -41,23 +41,23 @@ export function VirtualScroll({
       style={{
         height,
         width,
-        overflow: "auto",
-        position: "relative"
+        overflow: 'auto',
+        position: 'relative',
       }}
       onScroll={handleScroll}
     >
-      <div style={{ height: totalHeight, position: "relative" }}>
+      <div style={{ height: totalHeight, position: 'relative' }}>
         {items.slice(startIndex, endIndex).map((item, offset) => {
           const index = startIndex + offset;
           return (
             <div
               key={index}
               style={{
-                position: "absolute",
+                position: 'absolute',
                 top: index * itemHeight,
                 height: itemHeight,
                 left: 0,
-                right: 0
+                right: 0,
               }}
             >
               {item}

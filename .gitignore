@@ -22,3 +22,6 @@ node_modules
 
 # TypeScript
 *.tsbuildinfo
+
+# bv (beads viewer) local config and caches
+.bv/

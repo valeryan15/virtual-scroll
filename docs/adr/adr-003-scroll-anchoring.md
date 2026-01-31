@@ -5,8 +5,8 @@
 **Контекст проекта:** Библиотека виртуального скролла
 **Связанные ADR:**
 
-* ADR-001: Virtualization Architecture
-* ADR-002: Public API
+- ADR-001: Virtualization Architecture
+- ADR-002: Public API
 
 ---
 
@@ -14,16 +14,16 @@
 
 В библиотеке виртуального скролла поддерживаются:
 
-* динамические размеры строк и столбцов;
-* догрузка данных (append / prepend);
-* измерение размеров после рендера (late-measure);
-* программная прокрутка (`scrollToIndex`, `scrollToCell`).
+- динамические размеры строк и столбцов;
+- догрузка данных (append / prepend);
+- измерение размеров после рендера (late-measure);
+- программная прокрутка (`scrollToIndex`, `scrollToCell`).
 
 Во всех этих сценариях происходит изменение:
 
-* общей виртуальной длины (`totalSize`);
-* смещений элементов (`offset`);
-* диапазона виртуализации.
+- общей виртуальной длины (`totalSize`);
+- смещений элементов (`offset`);
+- диапазона виртуализации.
 
 Без дополнительной стабилизации это приводит к **скачкам скролла (scroll jump)** — визуально пользователь «теряет» позицию, хотя логически остаётся в том же месте списка.
 
@@ -33,16 +33,16 @@
 
 Нативный браузерный scroll anchoring:
 
-* работает только для реального DOM-контента;
-* не учитывает виртуализацию и искусственные offsets;
-* не способен корректно обработать prepend данных и пересчёт размеров.
+- работает только для реального DOM-контента;
+- не учитывает виртуализацию и искусственные offsets;
+- не способен корректно обработать prepend данных и пересчёт размеров.
 
 В результате:
 
-* при изменении размеров элементов viewport «прыгает»;
-* при prepend пользователь теряет текущий контекст;
-* программный `scrollToIndex` становится нестабильным;
-* UX деградирует при работе с динамическими данными (чаты, ленты, карточки).
+- при изменении размеров элементов viewport «прыгает»;
+- при prepend пользователь теряет текущий контекст;
+- программный `scrollToIndex` становится нестабильным;
+- UX деградирует при работе с динамическими данными (чаты, ленты, карточки).
 
 ---
 
@@ -66,8 +66,8 @@ interface ScrollAnchor {
 
 Где:
 
-* `index` — индекс элемента (строки / столбца);
-* `offsetInItem` — расстояние от начала элемента до текущего scroll position.
+- `index` — индекс элемента (строки / столбца);
+- `offsetInItem` — расстояние от начала элемента до текущего scroll position.
 
 ---
 
@@ -75,12 +75,12 @@ interface ScrollAnchor {
 
 По умолчанию якорем является:
 
-* **первый видимый элемент** в текущем virtual range.
+- **первый видимый элемент** в текущем virtual range.
 
 Дополнительно:
 
-* если активен `scrollToIndex`, якорь фиксируется на целевом элементе;
-* sticky элементы **не могут быть якорем**.
+- если активен `scrollToIndex`, якорь фиксируется на целевом элементе;
+- sticky элементы **не могут быть якорем**.
 
 ---
 
@@ -90,25 +90,25 @@ interface ScrollAnchor {
 
 Перед операциями, способными изменить offsets:
 
-* измерение размеров;
-* изменение данных;
-* prepend / append;
-* resize viewport;
+- измерение размеров;
+- изменение данных;
+- prepend / append;
+- resize viewport;
 
 сохраняется:
 
 ```ts
-anchor.index
-anchor.offsetInItem = scrollOffset - getOffsetByIndex(anchor.index)
+anchor.index;
+anchor.offsetInItem = scrollOffset - getOffsetByIndex(anchor.index);
 ```
 
 ---
 
 #### 3.2 Пересчёт модели
 
-* обновляются размеры элементов;
-* пересчитывается `totalSize`;
-* пересчитываются prefix sums / offsets.
+- обновляются размеры элементов;
+- пересчитывается `totalSize`;
+- пересчитываются prefix sums / offsets.
 
 ---
 
@@ -117,14 +117,13 @@ anchor.offsetInItem = scrollOffset - getOffsetByIndex(anchor.index)
 После пересчёта вычисляется новое смещение:
 
 ```ts
-newScrollOffset =
-  getOffsetByIndex(anchor.index) + anchor.offsetInItem;
+newScrollOffset = getOffsetByIndex(anchor.index) + anchor.offsetInItem;
 ```
 
 И применяется:
 
-* `scrollTop` для вертикали;
-* `scrollLeft` для горизонтали.
+- `scrollTop` для вертикали;
+- `scrollLeft` для горизонтали.
 
 ---
 
@@ -146,27 +145,26 @@ Anchoring **обязателен** в следующих сценариях:
 
 #### Append
 
-* anchoring не требуется, если пользователь вверху;
-* если пользователь внизу — якорь удерживает позицию.
+- anchoring не требуется, если пользователь вверху;
+- если пользователь внизу — якорь удерживает позицию.
 
 #### Prepend
 
-* anchoring **всегда активен**;
-* якорь позволяет сохранить текущую строку в viewport.
+- anchoring **всегда активен**;
+- якорь позволяет сохранить текущую строку в viewport.
 
 ---
 
 ### 6. Ограничения и fallback-логика
 
-* Если `anchor.index` выходит за пределы массива:
+- Если `anchor.index` выходит за пределы массива:
+  - применяется `clampIndex`.
 
-  * применяется `clampIndex`.
-* Если элемент ещё не измерен:
+- Если элемент ещё не измерен:
+  - используется `estimatedItemSize`.
 
-  * используется `estimatedItemSize`.
-* При больших расхождениях:
-
-  * допускается одноразовая коррекция без анимации.
+- При больших расхождениях:
+  - допускается одноразовая коррекция без анимации.
 
 ---
 
@@ -174,10 +172,10 @@ Anchoring **обязателен** в следующих сценариях:
 
 Anchoring используется внутри:
 
-* `scrollToIndex`
-* `scrollToRow / scrollToColumn / scrollToCell`
-* `measure()`
-* `useVirtualList / useVirtualGrid`
+- `scrollToIndex`
+- `scrollToRow / scrollToColumn / scrollToCell`
+- `measure()`
+- `useVirtualList / useVirtualGrid`
 
 **Публично anchoring не экспонируется**, но его поведение является частью контрактов API.
 
@@ -187,18 +185,18 @@ Anchoring используется внутри:
 
 ### Положительные
 
-* Отсутствие scroll jump’ов в динамических сценариях.
-* Предсказуемое поведение при prepend данных.
-* Стабильная программная прокрутка.
-* UX, сопоставимый с нативными scroll-решениями.
+- Отсутствие scroll jump’ов в динамических сценариях.
+- Предсказуемое поведение при prepend данных.
+- Стабильная программная прокрутка.
+- UX, сопоставимый с нативными scroll-решениями.
 
 ---
 
 ### Отрицательные / Trade-offs
 
-* Усложнение core-алгоритмов.
-* Дополнительные вычисления при каждом update.
-* Более сложное тестирование (нужно проверять визуальную стабильность).
+- Усложнение core-алгоритмов.
+- Дополнительные вычисления при каждом update.
+- Более сложное тестирование (нужно проверять визуальную стабильность).
 
 ---
 
@@ -220,26 +218,26 @@ Anchoring используется внутри:
 
 ## Non-Goals
 
-* Не предоставляется публичный API управления якорем.
-* Не гарантируется pixel-perfect стабильность при экстремально неточных `estimatedItemSize`.
-* Не решается проблема логической навигации (focus management).
+- Не предоставляется публичный API управления якорем.
+- Не гарантируется pixel-perfect стабильность при экстремально неточных `estimatedItemSize`.
+- Не решается проблема логической навигации (focus management).
 
 ---
 
 ## Testing Strategy
 
-* Unit-тесты: корректность пересчёта offsets.
-* Integration-тесты:
+- Unit-тесты: корректность пересчёта offsets.
+- Integration-тесты:
+  - prepend без scroll jump;
+  - image load внутри viewport;
+  - scrollToIndex в dynamic-режиме.
 
-  * prepend без scroll jump;
-  * image load внутри viewport;
-  * scrollToIndex в dynamic-режиме.
-* Regression: сравнение scrollTop до/после update.
+- Regression: сравнение scrollTop до/после update.
 
 ---
 
 ## Follow-ups
 
-* ADR-004: Sticky Rows & Columns Rendering
-* ADR-005: Dynamic Size Index Implementation
-* Документация anchoring-поведения в Storybook Docs
+- ADR-004: Sticky Rows & Columns Rendering
+- ADR-005: Dynamic Size Index Implementation
+- Документация anchoring-поведения в Storybook Docs

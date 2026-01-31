@@ -44,6 +44,13 @@ prefix_rule(
   match = ["sh -c 'node -v'"],
 )
 
+prefix_rule(
+  pattern = ["bd", "sync"],
+  decision = "prompt",
+  justification = "Sync bd.",
+  match = ["bd sync"],
+)
+
 # ----------------------------
 # 2) Safe read-only defaults (allow)
 # ----------------------------
