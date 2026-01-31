@@ -1,5 +1,14 @@
 #!/usr/bin/env sh
-. "$(dirname -- "$0")/_/husky.sh"
 
-npm run format:check
-npm run lint
+STAGED_FILES=$(git diff --name-only --cached --diff-filter=ACM)
+PRETTIER_FILES=$(printf "%s\n" "$STAGED_FILES" | grep -E '\\.(ts|tsx|js|jsx|json|css|scss|md|yml|yaml)$' || true)
+TS_FILES=$(printf "%s\n" "$STAGED_FILES" | grep -E '\\.(ts|tsx)$' || true)
+
+if [ -n "$PRETTIER_FILES" ]; then
+  yarn prettier --write $PRETTIER_FILES
+  git add $PRETTIER_FILES
+fi
+
+if [ -n "$TS_FILES" ]; then
+  yarn run lint -- $TS_FILES
+fi
