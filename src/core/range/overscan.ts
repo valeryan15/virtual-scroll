@@ -7,12 +7,7 @@ type OverscanInput = {
   getOffsetByIndex: (index: number) => number;
 };
 
-export function applyOverscan({
-  range,
-  overscan,
-  count,
-  getOffsetByIndex,
-}: OverscanInput): VirtualRange {
+export function applyOverscan({ range, overscan, count, getOffsetByIndex }: OverscanInput): VirtualRange {
   if (count <= 0) {
     return { start: 0, end: 0, offset: 0 };
   }

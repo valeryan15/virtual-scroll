@@ -8,11 +8,7 @@ export type FixedAxisConfig = {
   overscan?: number;
 };
 
-export function createFixedAxisModel({
-  count,
-  itemSize,
-  overscan = 1,
-}: FixedAxisConfig): AxisModel {
+export function createFixedAxisModel({ count, itemSize, overscan = 1 }: FixedAxisConfig): AxisModel {
   const safeCount = Math.max(0, count);
   const safeItemSize = Number.isFinite(itemSize) ? itemSize : 0;
 

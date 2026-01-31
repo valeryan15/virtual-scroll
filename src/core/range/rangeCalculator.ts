@@ -7,12 +7,7 @@ type FixedRangeInput = {
   count: number;
 };
 
-export function calculateFixedRange({
-  viewportOffset,
-  viewportSize,
-  itemSize,
-  count,
-}: FixedRangeInput): VirtualRange {
+export function calculateFixedRange({ viewportOffset, viewportSize, itemSize, count }: FixedRangeInput): VirtualRange {
   const safeItemSize = Number.isFinite(itemSize) ? itemSize : 0;
   const safeViewportSize = Number.isFinite(viewportSize) ? viewportSize : 0;
   const safeViewportOffset = Number.isFinite(viewportOffset) ? viewportOffset : 0;

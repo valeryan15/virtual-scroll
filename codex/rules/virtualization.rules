@@ -44,13 +44,6 @@ prefix_rule(
   match = ["sh -c 'node -v'"],
 )
 
-prefix_rule(
-  pattern = ["bd", "sync"],
-  decision = "prompt",
-  justification = "Sync bd.",
-  match = ["bd sync"],
-)
-
 # ----------------------------
 # 2) Safe read-only defaults (allow)
 # ----------------------------
@@ -168,4 +161,16 @@ prefix_rule(
   decision = "forbidden",
   justification = "Publishing is blocked from Codex outside sandbox. Do it manually in a controlled release workflow.",
   match = ["pnpm publish"],
+)
+
+# Разрешить чтение/просмотр
+prefix_rule(
+  pattern = ["bd"],
+  decision = "prompt",
+)
+
+# git worktree используется Beads-ом в sync-branch режиме
+prefix_rule(
+  pattern = ["git", "worktree"],
+  decision = "prompt",
 )
