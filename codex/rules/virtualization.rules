@@ -1,0 +1,164 @@
+# codex/rules/virtualization.rules
+# Execution policy for the Virtualization library repo.
+# Format: Starlark. Rules are matched against argv lists. :contentReference[oaicite:3]{index=3}
+
+# ----------------------------
+# 1) Hard blocks (forbidden)
+# ----------------------------
+
+# Block privilege escalation outside sandbox.
+prefix_rule(
+  pattern = ["sudo"],
+  decision = "forbidden",
+  justification = "No privilege escalation outside sandbox. Run inside sandbox or via documented scripts.",
+  match = ["sudo rm -rf /tmp/foo"],
+)
+
+# Block destructive filesystem commands.
+prefix_rule(
+  pattern = ["rm"],
+  decision = "forbidden",
+  justification = "Destructive commands are blocked outside sandbox. Use sandbox or prompt with a safer alternative.",
+  match = ["rm -rf dist"],
+)
+
+prefix_rule(
+  pattern = ["dd"],
+  decision = "forbidden",
+  justification = "Blocked: unsafe low-level disk operations.",
+  match = ["dd if=/dev/zero of=/dev/disk1"],
+)
+
+# Block remote code execution patterns.
+prefix_rule(
+  pattern = ["bash", "-lc"],
+  decision = "prompt",
+  justification = "Shell scripts can hide multiple actions. Require approval outside sandbox.",
+  match = ["bash -lc 'pnpm test'"],
+)
+
+prefix_rule(
+  pattern = ["sh", "-c"],
+  decision = "prompt",
+  justification = "Shell scripts can hide multiple actions. Require approval outside sandbox.",
+  match = ["sh -c 'node -v'"],
+)
+
+# ----------------------------
+# 2) Safe read-only defaults (allow)
+# ----------------------------
+
+# Allow basic navigation and read-only inspection.
+prefix_rule(
+  pattern = ["ls"],
+  decision = "allow",
+  justification = "Read-only inspection is allowed.",
+  match = ["ls -la"],
+)
+
+prefix_rule(
+  pattern = ["pwd"],
+  decision = "allow",
+  justification = "Read-only inspection is allowed.",
+  match = ["pwd"],
+)
+
+prefix_rule(
+  pattern = ["cat"],
+  decision = "allow",
+  justification = "Read-only inspection is allowed.",
+  match = ["cat package.json"],
+)
+
+prefix_rule(
+  pattern = ["rg"],
+  decision = "allow",
+  justification = "Read-only search is allowed.",
+  match = ["rg \"AxisModel\" -n src"],
+)
+
+prefix_rule(
+  pattern = ["git", "status"],
+  decision = "allow",
+  justification = "Read-only git inspection is allowed.",
+  match = ["git status"],
+)
+
+prefix_rule(
+  pattern = ["git", "diff"],
+  decision = "allow",
+  justification = "Read-only git inspection is allowed.",
+  match = ["git diff"],
+)
+
+prefix_rule(
+  pattern = ["git", "log"],
+  decision = "allow",
+  justification = "Read-only git inspection is allowed.",
+  match = ["git log --oneline -n 20"],
+)
+
+# ----------------------------
+# 3) Prompted operations (review required)
+# ----------------------------
+
+# Package manager operations can alter lockfiles / install scripts.
+prefix_rule(
+  pattern = [["npm", "pnpm", "yarn"], "install"],
+  decision = "prompt",
+  justification = "Dependency install may execute scripts and modify lockfiles. Require approval outside sandbox.",
+  match = ["pnpm install"],
+  not_match = ["pnpm -v"],  # pattern must be exact prefix
+)
+
+prefix_rule(
+  pattern = [["npm", "pnpm", "yarn"], "run"],
+  decision = "prompt",
+  justification = "Scripts can do arbitrary work. Approve before running outside sandbox.",
+  match = ["pnpm run test"],
+)
+
+# Build/test commands are usually safe but can be expensive or run scripts.
+prefix_rule(
+  pattern = [["npm", "pnpm", "yarn"], "test"],
+  decision = "prompt",
+  justification = "Tests may be long-running and execute scripts. Approve outside sandbox.",
+  match = ["pnpm test"],
+)
+
+prefix_rule(
+  pattern = [["npm", "pnpm", "yarn"], "build"],
+  decision = "prompt",
+  justification = "Build runs project scripts; approve outside sandbox.",
+  match = ["pnpm build"],
+)
+
+# Git write operations require approval.
+prefix_rule(
+  pattern = ["git", "commit"],
+  decision = "prompt",
+  justification = "Writing history requires approval outside sandbox.",
+  match = ["git commit -m \"feat: add SizeIndex\""],
+)
+
+prefix_rule(
+  pattern = ["git", "push"],
+  decision = "prompt",
+  justification = "Network write operation; approve outside sandbox.",
+  match = ["git push origin main"],
+)
+
+prefix_rule(
+  pattern = ["git", "tag"],
+  decision = "prompt",
+  justification = "Tagging affects release process; approve outside sandbox.",
+  match = ["git tag v0.1.0"],
+)
+
+# Publishing is high-risk.
+prefix_rule(
+  pattern = [["npm", "pnpm", "yarn"], "publish"],
+  decision = "forbidden",
+  justification = "Publishing is blocked from Codex outside sandbox. Do it manually in a controlled release workflow.",
+  match = ["pnpm publish"],
+)

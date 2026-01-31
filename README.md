@@ -13,8 +13,11 @@ React + TypeScript библиотека для рендеринга больши
 ## Установка
 
 ```bash
+nvm use
 npm install
 ```
+
+`nvm use` использует версию из `.nvmrc`.
 
 ## Скрипты
 
