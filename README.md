@@ -10,6 +10,12 @@ React + TypeScript библиотека для рендеринга больши
 - Storybook для документации и Jest для тестов.
 - Prettier для форматирования, TSLint для lint-проверок, Husky для git-хуков.
 
+## Документация
+
+- Обзор и архитектура: `docs/overview.md`
+- Публичный API: `docs/public-api.md`
+- ADR: `docs/adr/`
+
 ## Установка
 
 ```bash
