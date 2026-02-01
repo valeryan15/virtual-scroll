@@ -25,4 +25,23 @@ describe('SizeIndex', () => {
     expect(index.findIndexByOffset(15)).toBe(1);
     expect(index.findIndexByOffset(35)).toBe(2);
   });
+
+  it('handles non-uniform sizes for findIndexByOffset', () => {
+    const index = createSizeIndex({ count: 4, estimatedItemSize: 10 });
+
+    index.setSize(1, 30);
+    index.setSize(2, 5);
+
+    expect(index.getOffset(0)).toBe(0);
+    expect(index.getOffset(1)).toBe(10);
+    expect(index.getOffset(2)).toBe(40);
+    expect(index.getOffset(3)).toBe(45);
+    expect(index.findIndexByOffset(0)).toBe(0);
+    expect(index.findIndexByOffset(9)).toBe(0);
+    expect(index.findIndexByOffset(10)).toBe(1);
+    expect(index.findIndexByOffset(39)).toBe(1);
+    expect(index.findIndexByOffset(40)).toBe(2);
+    expect(index.findIndexByOffset(44)).toBe(2);
+    expect(index.findIndexByOffset(45)).toBe(3);
+  });
 });
