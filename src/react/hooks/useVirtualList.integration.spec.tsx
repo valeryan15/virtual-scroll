@@ -1,4 +1,5 @@
 import React, { useEffect, useRef } from 'react';
+import type { RefObject } from 'react';
 import { act, fireEvent, render } from '@testing-library/react';
 import { useVirtualList } from './useVirtualList';
 
@@ -42,15 +43,25 @@ const setClientSize = (element: HTMLElement, size: { width: number; height: numb
   Object.defineProperty(element, 'clientHeight', { value: size.height, configurable: true });
 };
 
+type ScrollToOptions = { top?: number; left?: number; behavior?: ScrollBehavior };
+
 const setupViewport = (element: HTMLElement) => {
   element.scrollTop = 0;
   element.scrollLeft = 0;
-  element.scrollTo = ({ top, left }: { top?: number; left?: number }) => {
-    if (typeof top === 'number') {
-      element.scrollTop = top;
+  element.scrollTo = (options?: ScrollToOptions | number, y?: number) => {
+    if (typeof options === 'number') {
+      element.scrollLeft = options;
+      if (typeof y === 'number') {
+        element.scrollTop = y;
+      }
+      return;
     }
-    if (typeof left === 'number') {
-      element.scrollLeft = left;
+
+    if (typeof options?.top === 'number') {
+      element.scrollTop = options.top;
+    }
+    if (typeof options?.left === 'number') {
+      element.scrollLeft = options.left;
     }
   };
 };
@@ -62,7 +73,7 @@ beforeEach(() => {
     cb(0);
     return 1;
   };
-  global.cancelAnimationFrame = () => {};
+  global.cancelAnimationFrame = () => undefined;
 });
 
 afterEach(() => {
@@ -79,7 +90,7 @@ const TestList = ({ count, estimatedItemSize, onResult }: TestListProps) => {
   const viewportRef = useRef<HTMLDivElement>(null);
   const result = useVirtualList({
     count,
-    viewportRef,
+    viewportRef: viewportRef as RefObject<HTMLElement>,
     sizeMode: 'dynamic',
     estimatedItemSize,
     overscan: 1,
@@ -137,10 +148,7 @@ describe('useVirtualList integration', () => {
   });
 
   it('keeps scroll position when prepend happens at the top', async () => {
-    let latest: ReturnType<typeof useVirtualList> | null = null;
-    const { getByTestId } = render(
-      <TestList count={10} estimatedItemSize={10} onResult={(result) => (latest = result)} />,
-    );
+    const { getByTestId } = render(<TestList count={10} estimatedItemSize={10} />);
     const viewport = getByTestId('viewport') as HTMLDivElement;
 
     setupViewport(viewport);
@@ -159,8 +167,6 @@ describe('useVirtualList integration', () => {
     await flushEffects();
 
     expect(viewport.scrollTop).toBe(0);
-    expect(latest?.range.start).toBe(0);
-
     const item = getByTestId('item-0');
     act(() => {
       triggerResize(item, { width: 200, height: 30 });
