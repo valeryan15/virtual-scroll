@@ -11,3 +11,6 @@ export type {
   ScrollPosition,
   ScrollToIndexOptions,
 } from './shared/types';
+
+export { useVirtualList } from './react/hooks/useVirtualList';
+export { useVirtualGrid } from './react/hooks/useVirtualGrid';
