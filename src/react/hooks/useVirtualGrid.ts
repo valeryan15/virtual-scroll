@@ -111,8 +111,10 @@ export function useVirtualGrid(args: UseVirtualGridArgs): UseVirtualGridResult {
   columnAxisRef.current = columnAxis;
 
   const range = useMemo<GridRange>(() => {
-    const rowRange = rowAxis.getRange(scrollPosition.top, viewportSize.height, overscanValue.rows);
-    const columnRange = columnAxis.getRange(scrollPosition.left, viewportSize.width, overscanValue.columns);
+    const currentScrollTop = viewportRef.current?.scrollTop ?? scrollPosition.top;
+    const currentScrollLeft = viewportRef.current?.scrollLeft ?? scrollPosition.left;
+    const rowRange = rowAxis.getRange(currentScrollTop, viewportSize.height, overscanValue.rows);
+    const columnRange = columnAxis.getRange(currentScrollLeft, viewportSize.width, overscanValue.columns);
     return {
       rows: { start: rowRange.start, end: rowRange.end },
       columns: { start: columnRange.start, end: columnRange.end },
@@ -124,6 +126,7 @@ export function useVirtualGrid(args: UseVirtualGridArgs): UseVirtualGridResult {
     rowAxis,
     scrollPosition.left,
     scrollPosition.top,
+    viewportRef,
     viewportSize.height,
     viewportSize.width,
     measureVersion,
@@ -274,8 +277,9 @@ export function useVirtualGrid(args: UseVirtualGridArgs): UseVirtualGridResult {
           return;
         }
 
+        const currentScrollOffset = viewportRef.current?.scrollTop ?? scrollTopRef.current;
         const anchor = anchorManager.capture({
-          scrollOffset: scrollTopRef.current,
+          scrollOffset: currentScrollOffset,
           rangeStart: rangeRef.current.rows.start,
           count: axisModel.count,
           getOffsetByIndex: axisModel.getOffsetByIndex,
@@ -357,8 +361,9 @@ export function useVirtualGrid(args: UseVirtualGridArgs): UseVirtualGridResult {
           return;
         }
 
+        const currentScrollOffset = viewportRef.current?.scrollLeft ?? scrollLeftRef.current;
         const anchor = anchorManager.capture({
-          scrollOffset: scrollLeftRef.current,
+          scrollOffset: currentScrollOffset,
           rangeStart: rangeRef.current.columns.start,
           count: axisModel.count,
           getOffsetByIndex: axisModel.getOffsetByIndex,
@@ -468,7 +473,17 @@ export function useVirtualGrid(args: UseVirtualGridArgs): UseVirtualGridResult {
       }
     }
     return result;
-  }, [columnAxis, columns, range.columns.end, range.columns.start, range.rows.end, range.rows.start, rowAxis, rows]);
+  }, [
+    columnAxis,
+    columns,
+    measureVersion,
+    range.columns.end,
+    range.columns.start,
+    range.rows.end,
+    range.rows.start,
+    rowAxis,
+    rows,
+  ]);
 
   return {
     totalWidth: columnAxis.totalSize,

@@ -93,8 +93,9 @@ export function useVirtualList(args: UseVirtualListArgs): UseVirtualListResult {
   axisRef.current = axis;
 
   const range = useMemo(() => {
-    return axis.getRange(scrollPosition.top, viewportSize.height, overscanValue);
-  }, [axis, overscanValue, scrollPosition.top, viewportSize.height, measureVersion]);
+    const currentScrollTop = viewportRef.current?.scrollTop ?? scrollPosition.top;
+    return axis.getRange(currentScrollTop, viewportSize.height, overscanValue);
+  }, [axis, overscanValue, scrollPosition.top, viewportRef, viewportSize.height, measureVersion]);
 
   const rangeRef = useRef(range);
   const scrollOffsetRef = useRef(scrollPosition.top);
@@ -186,8 +187,9 @@ export function useVirtualList(args: UseVirtualListArgs): UseVirtualListResult {
           return;
         }
 
+        const currentScrollOffset = viewportRef.current?.scrollTop ?? scrollOffsetRef.current;
         const anchor = anchorManager.capture({
-          scrollOffset: scrollOffsetRef.current,
+          scrollOffset: currentScrollOffset,
           rangeStart: rangeRef.current.start,
           count: axisModel.count,
           getOffsetByIndex: axisModel.getOffsetByIndex,
@@ -269,7 +271,7 @@ export function useVirtualList(args: UseVirtualListArgs): UseVirtualListResult {
       });
     }
     return result;
-  }, [axis, itemKey, itemSize, range.end, range.start]);
+  }, [axis, itemKey, itemSize, measureVersion, range.end, range.start]);
 
   return {
     totalSize: axis.totalSize,

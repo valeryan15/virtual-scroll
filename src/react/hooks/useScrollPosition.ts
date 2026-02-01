@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { RefObject } from 'react';
 
 export type ScrollPosition = {
@@ -41,6 +41,20 @@ export function useScrollPosition(viewportRef: RefObject<HTMLElement>): ScrollPo
       element.removeEventListener('scroll', onScroll);
     };
   }, [viewportRef]);
+
+  useLayoutEffect(() => {
+    const element = viewportRef.current;
+    if (!element) {
+      return;
+    }
+
+    if (element.scrollTop !== position.top || element.scrollLeft !== position.left) {
+      setPosition({
+        top: element.scrollTop,
+        left: element.scrollLeft,
+      });
+    }
+  }, [position.left, position.top, viewportRef]);
 
   return position;
 }
