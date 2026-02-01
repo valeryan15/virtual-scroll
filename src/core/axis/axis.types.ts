@@ -1,3 +1,5 @@
+import type { VirtualRange } from '../range/range.types';
+
 export type { VirtualRange } from '../range/range.types';
 
 export interface AxisModel {
