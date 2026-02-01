@@ -33,4 +33,28 @@ describe('anchorManager', () => {
 
     expect(shifted).toEqual({ index: 5, offsetInItem: 4 });
   });
+
+  it('clamps anchor index when applying to smaller dataset', () => {
+    const manager = createAnchorManager();
+    const anchor = { index: 10, offsetInItem: 2 };
+    const getOffsetByIndex = (index: number) => index * 5;
+
+    const newOffset = manager.apply(anchor, { count: 3, getOffsetByIndex });
+
+    expect(newOffset).toBe(10 + 2);
+  });
+
+  it('returns null anchor when count is zero', () => {
+    const manager = createAnchorManager();
+    const getOffsetByIndex = (_index: number) => 0;
+
+    const anchor = manager.capture({
+      scrollOffset: 0,
+      rangeStart: 0,
+      count: 0,
+      getOffsetByIndex,
+    });
+
+    expect(anchor).toBeNull();
+  });
 });
