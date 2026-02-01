@@ -6,7 +6,7 @@ export type ScrollPosition = {
   left: number;
 };
 
-export function useScrollPosition(viewportRef: RefObject<HTMLElement>): ScrollPosition {
+export function useScrollPosition(viewportRef: RefObject<HTMLElement | null>): ScrollPosition {
   const [position, setPosition] = useState<ScrollPosition>({ top: 0, left: 0 });
   const frameRef = useRef<number | null>(null);
 

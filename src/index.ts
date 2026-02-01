@@ -14,3 +14,6 @@ export type {
 
 export { useVirtualList } from './react/hooks/useVirtualList';
 export { useVirtualGrid } from './react/hooks/useVirtualGrid';
+export { VirtualList } from './react/VirtualList';
+export { VirtualGrid } from './react/VirtualGrid';
+export type { VirtualGridHandle, VirtualGridProps, VirtualListHandle, VirtualListProps } from './react/types';

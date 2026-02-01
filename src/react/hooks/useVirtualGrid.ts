@@ -21,7 +21,7 @@ type VirtualCell = {
 type UseVirtualGridArgs = {
   rowCount: number;
   columnCount: number;
-  viewportRef: RefObject<HTMLElement>;
+  viewportRef: RefObject<HTMLElement | null>;
   rows: AxisConfig;
   columns: AxisConfig;
   overscan?: GridOverscan;
@@ -39,6 +39,7 @@ type UseVirtualGridResult = {
   scrollToColumn: (columnIndex: number, options?: ScrollToIndexOptions) => void;
   measureRowElement?: (rowIndex: number, element: HTMLElement | null) => void;
   measureColumnElement?: (columnIndex: number, element: HTMLElement | null) => void;
+  measure: () => void;
 };
 
 const getOverscanValue = (overscan?: Overscan1D) => {
@@ -449,6 +450,75 @@ export function useVirtualGrid(args: UseVirtualGridArgs): UseVirtualGridResult {
     state.observer.observe(element);
   }, []);
 
+  const measure = useCallback(() => {
+    let didUpdateRows = false;
+    let didUpdateColumns = false;
+
+    const rowAxisModel = rowAxisRef.current;
+    const columnAxisModel = columnAxisRef.current;
+    if (rows.sizeMode === 'dynamic') {
+      const state = rowMeasurementRef.current;
+      if (state && 'setSize' in rowAxisModel && typeof rowAxisModel.setSize === 'function') {
+        const currentScrollOffset = viewportRef.current?.scrollTop ?? scrollTopRef.current;
+        const anchor = anchorManager.capture({
+          scrollOffset: currentScrollOffset,
+          rangeStart: rangeRef.current.rows.start,
+          count: rowAxisModel.count,
+          getOffsetByIndex: rowAxisModel.getOffsetByIndex,
+        });
+
+        for (const [observedElement, index] of state.observed.entries()) {
+          const size = Math.max(0, observedElement.getBoundingClientRect().height);
+          rowAxisModel.setSize(index, size);
+          didUpdateRows = true;
+        }
+
+        const viewportElement = viewportRef.current;
+        if (viewportElement && didUpdateRows) {
+          const nextOffset = anchorManager.apply(anchor, {
+            count: rowAxisModel.count,
+            getOffsetByIndex: rowAxisModel.getOffsetByIndex,
+          });
+          if (Math.abs(viewportElement.scrollTop - nextOffset) > 0.5) {
+            viewportElement.scrollTop = nextOffset;
+          }
+        }
+      }
+    }
+
+    if (columns.sizeMode === 'dynamic') {
+      const state = columnMeasurementRef.current;
+      if (state && 'setSize' in columnAxisModel && typeof columnAxisModel.setSize === 'function') {
+        const currentScrollOffset = viewportRef.current?.scrollLeft ?? scrollLeftRef.current;
+        const anchor = anchorManager.capture({
+          scrollOffset: currentScrollOffset,
+          rangeStart: rangeRef.current.columns.start,
+          count: columnAxisModel.count,
+          getOffsetByIndex: columnAxisModel.getOffsetByIndex,
+        });
+
+        for (const [observedElement, index] of state.observed.entries()) {
+          const size = Math.max(0, observedElement.getBoundingClientRect().width);
+          columnAxisModel.setSize(index, size);
+          didUpdateColumns = true;
+        }
+
+        const viewportElement = viewportRef.current;
+        if (viewportElement && didUpdateColumns) {
+          const nextOffset = anchorManager.apply(anchor, {
+            count: columnAxisModel.count,
+            getOffsetByIndex: columnAxisModel.getOffsetByIndex,
+          });
+          if (Math.abs(viewportElement.scrollLeft - nextOffset) > 0.5) {
+            viewportElement.scrollLeft = nextOffset;
+          }
+        }
+      }
+    }
+
+    setMeasureVersion((value) => value + 1);
+  }, [anchorManager, columns.sizeMode, rows.sizeMode, viewportRef]);
+
   const cells = useMemo(() => {
     const result: VirtualCell[] = [];
     for (let rowIndex = range.rows.start; rowIndex < range.rows.end; rowIndex += 1) {
@@ -495,5 +565,6 @@ export function useVirtualGrid(args: UseVirtualGridArgs): UseVirtualGridResult {
     scrollToColumn,
     measureRowElement: rows.sizeMode === 'dynamic' ? measureRowElement : undefined,
     measureColumnElement: columns.sizeMode === 'dynamic' ? measureColumnElement : undefined,
+    measure,
   };
 }
