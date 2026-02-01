@@ -7,7 +7,7 @@ export type ViewportSize = {
   height: number;
 };
 
-export function useViewportSize(viewportRef: RefObject<HTMLElement>): ViewportSize {
+export function useViewportSize(viewportRef: RefObject<HTMLElement | null>): ViewportSize {
   const [size, setSize] = useState<ViewportSize>({ width: 0, height: 0 });
   const frameRef = useRef<number | null>(null);
 

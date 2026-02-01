@@ -18,7 +18,8 @@ type VirtualItem = {
 type UseVirtualListArgs = {
   count: number;
   itemKey?: (index: number) => Key;
-  viewportRef: RefObject<HTMLElement>;
+  viewportRef: RefObject<HTMLElement | null>;
+  direction?: 'vertical' | 'horizontal';
   sizeMode: 'fixed' | 'dynamic';
   itemSize?: number;
   estimatedItemSize?: number;
@@ -33,6 +34,7 @@ type UseVirtualListResult = {
   offset: number;
   scrollToIndex: (index: number, options?: ScrollToIndexOptions) => void;
   measureElement?: (index: number, el: HTMLElement | null) => void;
+  measure: () => void;
   range: { start: number; end: number };
 };
 
@@ -61,6 +63,7 @@ export function useVirtualList(args: UseVirtualListArgs): UseVirtualListResult {
     count,
     itemKey,
     viewportRef,
+    direction = 'vertical',
     sizeMode,
     itemSize,
     estimatedItemSize,
@@ -93,18 +96,32 @@ export function useVirtualList(args: UseVirtualListArgs): UseVirtualListResult {
   axisRef.current = axis;
 
   const range = useMemo(() => {
-    const currentScrollTop = viewportRef.current?.scrollTop ?? scrollPosition.top;
-    return axis.getRange(currentScrollTop, viewportSize.height, overscanValue);
-  }, [axis, overscanValue, scrollPosition.top, viewportRef, viewportSize.height, measureVersion]);
+    const currentScrollOffset =
+      direction === 'horizontal'
+        ? viewportRef.current?.scrollLeft ?? scrollPosition.left
+        : viewportRef.current?.scrollTop ?? scrollPosition.top;
+    const viewportExtent = direction === 'horizontal' ? viewportSize.width : viewportSize.height;
+    return axis.getRange(currentScrollOffset, viewportExtent, overscanValue);
+  }, [
+    axis,
+    direction,
+    overscanValue,
+    scrollPosition.left,
+    scrollPosition.top,
+    viewportRef,
+    viewportSize.height,
+    viewportSize.width,
+    measureVersion,
+  ]);
 
   const rangeRef = useRef(range);
-  const scrollOffsetRef = useRef(scrollPosition.top);
+  const scrollOffsetRef = useRef(0);
   useEffect(() => {
     rangeRef.current = range;
   }, [range]);
   useEffect(() => {
-    scrollOffsetRef.current = scrollPosition.top;
-  }, [scrollPosition.top]);
+    scrollOffsetRef.current = direction === 'horizontal' ? scrollPosition.left : scrollPosition.top;
+  }, [direction, scrollPosition.left, scrollPosition.top]);
 
   useEffect(() => {
     onRangeChange?.({ start: range.start, end: range.end });
@@ -121,7 +138,7 @@ export function useVirtualList(args: UseVirtualListArgs): UseVirtualListResult {
       const safeIndex = Math.min(Math.max(index, 0), axisModel.count - 1);
       const baseOffset = axisModel.getOffsetByIndex(safeIndex);
       const itemExtent = getItemSizeFromAxis(axisModel, safeIndex, itemSize ?? 0);
-      const viewportExtent = viewportSize.height;
+      const viewportExtent = direction === 'horizontal' ? viewportSize.width : viewportSize.height;
       const align = options?.align ?? 'start';
       let targetOffset = baseOffset;
 
@@ -139,9 +156,13 @@ export function useVirtualList(args: UseVirtualListArgs): UseVirtualListResult {
         targetOffset = baseOffset < current ? baseOffset : end - viewportExtent;
       }
 
-      element.scrollTo({ top: Math.max(0, targetOffset), behavior: options?.behavior });
+      if (direction === 'horizontal') {
+        element.scrollTo({ left: Math.max(0, targetOffset), behavior: options?.behavior });
+      } else {
+        element.scrollTo({ top: Math.max(0, targetOffset), behavior: options?.behavior });
+      }
     },
-    [itemSize, viewportRef, viewportSize.height],
+    [direction, itemSize, viewportRef, viewportSize.height, viewportSize.width],
   );
 
   const measurementRef = useRef<{
@@ -187,7 +208,10 @@ export function useVirtualList(args: UseVirtualListArgs): UseVirtualListResult {
           return;
         }
 
-        const currentScrollOffset = viewportRef.current?.scrollTop ?? scrollOffsetRef.current;
+        const currentScrollOffset =
+          direction === 'horizontal'
+            ? viewportRef.current?.scrollLeft ?? scrollOffsetRef.current
+            : viewportRef.current?.scrollTop ?? scrollOffsetRef.current;
         const anchor = anchorManager.capture({
           scrollOffset: currentScrollOffset,
           rangeStart: rangeRef.current.start,
@@ -206,7 +230,11 @@ export function useVirtualList(args: UseVirtualListArgs): UseVirtualListResult {
             count: axisModel.count,
             getOffsetByIndex: axisModel.getOffsetByIndex,
           });
-          if (Math.abs(element.scrollTop - nextOffset) > 0.5) {
+          if (direction === 'horizontal') {
+            if (Math.abs(element.scrollLeft - nextOffset) > 0.5) {
+              element.scrollLeft = nextOffset;
+            }
+          } else if (Math.abs(element.scrollTop - nextOffset) > 0.5) {
             element.scrollTop = nextOffset;
           }
         }
@@ -233,7 +261,7 @@ export function useVirtualList(args: UseVirtualListArgs): UseVirtualListResult {
       state.observer.disconnect();
       measurementRef.current = null;
     };
-  }, [anchorManager, sizeMode, viewportRef]);
+  }, [anchorManager, direction, sizeMode, viewportRef]);
 
   const measureElement = useCallback(
     (index: number, element: HTMLElement | null) => {
@@ -273,12 +301,63 @@ export function useVirtualList(args: UseVirtualListArgs): UseVirtualListResult {
     return result;
   }, [axis, itemKey, itemSize, measureVersion, range.end, range.start]);
 
+  const measure = useCallback(() => {
+    const axisModel = axisRef.current;
+    if (sizeMode !== 'dynamic') {
+      setMeasureVersion((value) => value + 1);
+      return;
+    }
+
+    const state = measurementRef.current;
+    if (!state || !('setSize' in axisModel) || typeof axisModel.setSize !== 'function') {
+      setMeasureVersion((value) => value + 1);
+      return;
+    }
+
+    const currentScrollOffset =
+      direction === 'horizontal'
+        ? viewportRef.current?.scrollLeft ?? scrollOffsetRef.current
+        : viewportRef.current?.scrollTop ?? scrollOffsetRef.current;
+    const anchor = anchorManager.capture({
+      scrollOffset: currentScrollOffset,
+      rangeStart: rangeRef.current.start,
+      count: axisModel.count,
+      getOffsetByIndex: axisModel.getOffsetByIndex,
+    });
+
+    let didUpdate = false;
+    for (const [observedElement, index] of state.observed.entries()) {
+      const rect = observedElement.getBoundingClientRect();
+      const size = Math.max(0, direction === 'horizontal' ? rect.width : rect.height);
+      axisModel.setSize(index, size);
+      didUpdate = true;
+    }
+
+    const viewportElement = viewportRef.current;
+    if (viewportElement && didUpdate) {
+      const nextOffset = anchorManager.apply(anchor, {
+        count: axisModel.count,
+        getOffsetByIndex: axisModel.getOffsetByIndex,
+      });
+      if (direction === 'horizontal') {
+        if (Math.abs(viewportElement.scrollLeft - nextOffset) > 0.5) {
+          viewportElement.scrollLeft = nextOffset;
+        }
+      } else if (Math.abs(viewportElement.scrollTop - nextOffset) > 0.5) {
+        viewportElement.scrollTop = nextOffset;
+      }
+    }
+
+    setMeasureVersion((value) => value + 1);
+  }, [anchorManager, direction, sizeMode, viewportRef]);
+
   return {
     totalSize: axis.totalSize,
     items,
     offset: range.offset,
     scrollToIndex,
     measureElement: sizeMode === 'dynamic' ? measureElement : undefined,
+    measure,
     range: { start: range.start, end: range.end },
   };
 }
