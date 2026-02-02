@@ -175,6 +175,14 @@ export function useVirtualGrid(args: UseVirtualGridArgs): UseVirtualGridResult {
       if (!element) {
         return;
       }
+
+      if (rows.sizeMode === 'dynamic' && options?.allowEstimate === false) {
+        const currentRange = rangeRef.current.rows;
+        if (rowIndex < currentRange.start || rowIndex >= currentRange.end) {
+          return;
+        }
+      }
+
       const axisModel = rowAxisRef.current;
       const safeIndex = Math.min(Math.max(rowIndex, 0), axisModel.count - 1);
       const baseOffset = axisModel.getOffsetByIndex(safeIndex);
@@ -212,6 +220,14 @@ export function useVirtualGrid(args: UseVirtualGridArgs): UseVirtualGridResult {
       if (!element) {
         return;
       }
+
+      if (columns.sizeMode === 'dynamic' && options?.allowEstimate === false) {
+        const currentRange = rangeRef.current.columns;
+        if (columnIndex < currentRange.start || columnIndex >= currentRange.end) {
+          return;
+        }
+      }
+
       const axisModel = columnAxisRef.current;
       const safeIndex = Math.min(Math.max(columnIndex, 0), axisModel.count - 1);
       const baseOffset = axisModel.getOffsetByIndex(safeIndex);
@@ -249,10 +265,23 @@ export function useVirtualGrid(args: UseVirtualGridArgs): UseVirtualGridResult {
 
   const scrollToCell = useCallback(
     (rowIndex: number, columnIndex: number, options?: ScrollToIndexOptions) => {
+      if (options?.allowEstimate === false) {
+        const currentRange = rangeRef.current;
+        const rowAllowed =
+          rows.sizeMode === 'fixed' ||
+          (rowIndex >= currentRange.rows.start && rowIndex < currentRange.rows.end);
+        const columnAllowed =
+          columns.sizeMode === 'fixed' ||
+          (columnIndex >= currentRange.columns.start && columnIndex < currentRange.columns.end);
+        if (!rowAllowed || !columnAllowed) {
+          return;
+        }
+      }
+
       scrollToRow(rowIndex, options);
       scrollToColumn(columnIndex, options);
     },
-    [scrollToColumn, scrollToRow],
+    [columns.sizeMode, rows.sizeMode, scrollToColumn, scrollToRow],
   );
 
   const rowMeasurementRef = useRef<{
