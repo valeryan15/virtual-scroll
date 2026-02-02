@@ -9,6 +9,10 @@ export type ScrollPosition = {
 export function useScrollPosition(viewportRef: RefObject<HTMLElement | null>): ScrollPosition {
   const [position, setPosition] = useState<ScrollPosition>({ top: 0, left: 0 });
   const frameRef = useRef<number | null>(null);
+  const useIsomorphicLayoutEffect =
+    typeof window === 'undefined' || typeof window.requestAnimationFrame === 'undefined'
+      ? useEffect
+      : useLayoutEffect;
 
   useEffect(() => {
     const element = viewportRef.current;
@@ -42,7 +46,7 @@ export function useScrollPosition(viewportRef: RefObject<HTMLElement | null>): S
     };
   }, [viewportRef]);
 
-  useLayoutEffect(() => {
+  useIsomorphicLayoutEffect(() => {
     const element = viewportRef.current;
     if (!element) {
       return;

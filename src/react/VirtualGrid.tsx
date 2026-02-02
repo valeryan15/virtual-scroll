@@ -54,6 +54,7 @@ function VirtualGridInner(props: VirtualGridProps, ref: Ref<VirtualGridHandle>) 
     rows,
     columns,
     sticky,
+    ssr,
     overscan,
     scroll,
     onRangeChange,
@@ -83,6 +84,8 @@ function VirtualGridInner(props: VirtualGridProps, ref: Ref<VirtualGridHandle>) 
     : 0;
   const bodyRowCount = Math.max(0, rowCount - topCount - bottomCount);
   const bodyColumnCount = Math.max(0, columnCount - leftCount - rightCount);
+  const ssrBodyRows = Math.max(0, Math.min(bodyRowCount, (ssr?.rows ?? 0) - topCount));
+  const ssrBodyColumns = Math.max(0, Math.min(bodyColumnCount, (ssr?.columns ?? 0) - leftCount));
 
   const rowSize = useCallback((index: number) => getAxisItemSize(rows, index), [rows]);
   const columnSize = useCallback((index: number) => getAxisItemSize(columns, index), [columns]);
@@ -121,6 +124,7 @@ function VirtualGridInner(props: VirtualGridProps, ref: Ref<VirtualGridHandle>) 
     columns,
     overscan,
     sticky: { top: topCount, bottom: bottomCount, left: leftCount, right: rightCount },
+    ssr: ssrBodyRows > 0 || ssrBodyColumns > 0 ? { rows: ssrBodyRows, columns: ssrBodyColumns } : undefined,
     onRangeChange: (rangeValue) =>
       onRangeChange?.({
         rows: { start: rangeValue.rows.start + topCount, end: rangeValue.rows.end + topCount },

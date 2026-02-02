@@ -25,6 +25,7 @@ type UseVirtualListArgs = {
   estimatedItemSize?: number;
   overscan?: Overscan1D;
   sticky?: { top?: number; bottom?: number };
+  ssr?: { count?: number };
   onRangeChange?: (range: { start: number; end: number }) => void;
 };
 
@@ -69,13 +70,20 @@ export function useVirtualList(args: UseVirtualListArgs): UseVirtualListResult {
     estimatedItemSize,
     overscan,
     sticky,
+    ssr,
     onRangeChange,
   } = args;
   const overscanValue = getOverscanValue(overscan);
   const anchorManager = useMemo(() => createAnchorManager(), []);
   const [measureVersion, setMeasureVersion] = useState(0);
+  const [isHydrated, setIsHydrated] = useState(false);
   const scrollPosition = useScrollPosition(viewportRef);
   const viewportSize = useViewportSize(viewportRef);
+  const ssrCount = Math.max(0, Math.min(count, ssr?.count ?? 0));
+
+  useEffect(() => {
+    setIsHydrated(true);
+  }, []);
 
   const axis = useMemo(() => {
     if (sizeMode === 'dynamic') {
@@ -97,6 +105,9 @@ export function useVirtualList(args: UseVirtualListArgs): UseVirtualListResult {
   axisRef.current = axis;
 
   const range = useMemo(() => {
+    if (!isHydrated && ssrCount > 0) {
+      return { start: 0, end: ssrCount, offset: 0 };
+    }
     const stickyExtent = sizeMode === 'fixed' ? itemSize ?? 0 : estimatedItemSize ?? 0;
     const startOffset = direction === 'vertical' ? (sticky?.top ?? 0) * stickyExtent : 0;
     const endOffset = direction === 'vertical' ? (sticky?.bottom ?? 0) * stickyExtent : 0;
@@ -123,6 +134,8 @@ export function useVirtualList(args: UseVirtualListArgs): UseVirtualListResult {
     viewportSize.width,
     measureVersion,
     sizeMode,
+    isHydrated,
+    ssrCount,
   ]);
 
   const rangeRef = useRef(range);

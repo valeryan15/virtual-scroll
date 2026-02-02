@@ -18,6 +18,9 @@ export type VirtualListProps<T> = {
     renderStickyTop?: (args: { items: readonly T[] }) => ReactNode;
     renderStickyBottom?: (args: { items: readonly T[] }) => ReactNode;
   };
+  ssr?: {
+    count?: number;
+  };
   scroll?: {
     position?: ScrollPosition;
     onScroll?: (pos: ScrollPosition) => void;
@@ -43,6 +46,10 @@ export type VirtualGridProps = {
     renderTopStickyRow?: (args: { rowIndex: number }) => ReactNode;
     renderLeftStickyColumn?: (args: { columnIndex: number }) => ReactNode;
     renderCorner?: (args: { corner: 'tl' | 'tr' | 'bl' | 'br' }) => ReactNode;
+  };
+  ssr?: {
+    rows?: number;
+    columns?: number;
   };
   overscan?: GridOverscan;
   scroll?: {
