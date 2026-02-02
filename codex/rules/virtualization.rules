@@ -98,6 +98,35 @@ prefix_rule(
   match = ["git log --oneline -n 20"],
 )
 
+# Allow creating/switching branches without prompt when Codex escalates.
+prefix_rule(
+    pattern = ["git", ["checkout", "switch"], "-b"],
+    decision = "allow",
+    justification = "Allow creating new branches",
+    match = [
+        "git checkout -b feature/foo",
+        "git switch -b feature/foo",
+    ],
+)
+
+# Allow switching to an existing branch.
+prefix_rule(
+    pattern = ["git", ["checkout", "switch"]],
+    decision = "prompt",
+    justification = "Switching branches can affect working tree; confirm",
+    match = [
+        "git checkout main",
+        "git switch develop",
+    ],
+)
+
+# Allow fetching/pruning remote refs (usually safe).
+prefix_rule(
+    pattern = ["git", "fetch"],
+    decision = "allow",
+    justification = "Fetch is read/update of refs, generally safe",
+    match = ["git fetch -p"],
+)
 # ----------------------------
 # 3) Prompted operations (review required)
 # ----------------------------
