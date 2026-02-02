@@ -196,4 +196,26 @@ describe('useVirtualList integration', () => {
 
     expect(viewport.scrollTop).toBe(40);
   });
+
+  it('skips scroll when allowEstimate is false and target is outside range', async () => {
+    let latest: ReturnType<typeof useVirtualList> | null = null;
+    const { getByTestId } = render(
+      <TestList count={20} estimatedItemSize={10} onResult={(result) => (latest = result)} />,
+    );
+    const viewport = getByTestId('viewport') as HTMLDivElement;
+
+    setupViewport(viewport);
+    setClientSize(viewport, { width: 200, height: 50 });
+    await flushEffects();
+
+    act(() => {
+      triggerResize(viewport, { width: 200, height: 50 });
+    });
+
+    act(() => {
+      latest?.scrollToIndex(12, { allowEstimate: false });
+    });
+
+    expect(viewport.scrollTop).toBe(0);
+  });
 });

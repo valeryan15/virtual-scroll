@@ -215,4 +215,37 @@ describe('VirtualGrid integration', () => {
     expect(topWrapper?.style.transform).toBe('translateX(-30px)');
     expect(leftWrapper?.style.transform).toBe('translateY(-40px)');
   });
+
+  it('skips dynamic scroll when allowEstimate is false', async () => {
+    const gridRef = React.createRef<VirtualGridHandle>();
+    const { container } = render(
+      <VirtualGrid
+        ref={gridRef}
+        rowCount={20}
+        columnCount={20}
+        rows={{ sizeMode: 'dynamic', estimatedItemSize: 20 }}
+        columns={{ sizeMode: 'dynamic', estimatedItemSize: 30 }}
+        overscan={0}
+        renderCell={({ rowIndex, columnIndex }) => (
+          <div data-testid={`cell-${rowIndex}-${columnIndex}`} />
+        )}
+      />,
+    );
+
+    const viewport = container.firstElementChild as HTMLElement;
+    setupViewport(viewport);
+    setClientSize(viewport, { width: 90, height: 60 });
+    await flushEffects();
+
+    act(() => {
+      triggerResize(viewport, { width: 90, height: 60 });
+    });
+
+    act(() => {
+      gridRef.current?.scrollToCell(10, 10, { allowEstimate: false });
+    });
+
+    expect(viewport.scrollTop).toBe(0);
+    expect(viewport.scrollLeft).toBe(0);
+  });
 });

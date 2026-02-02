@@ -145,6 +145,13 @@ export function useVirtualList(args: UseVirtualListArgs): UseVirtualListResult {
         return;
       }
 
+      if (sizeMode === 'dynamic' && options?.allowEstimate === false) {
+        const currentRange = rangeRef.current;
+        if (index < currentRange.start || index >= currentRange.end) {
+          return;
+        }
+      }
+
       const axisModel = axisRef.current;
       const safeIndex = Math.min(Math.max(index, 0), axisModel.count - 1);
       const baseOffset = axisModel.getOffsetByIndex(safeIndex);
