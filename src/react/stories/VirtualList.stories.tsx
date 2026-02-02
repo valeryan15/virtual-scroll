@@ -24,9 +24,9 @@ const itemStyle: React.CSSProperties = {
   fontSize: 14,
 };
 
-const meta: Meta<typeof VirtualList> = {
+const meta: Meta<React.ComponentType<VirtualListProps<ListItem>>> = {
   title: 'Components/VirtualList',
-  component: VirtualList,
+  component: VirtualList as React.ComponentType<VirtualListProps<ListItem>>,
   tags: ['autodocs'],
   args: {
     overscan: 2,
@@ -35,7 +35,7 @@ const meta: Meta<typeof VirtualList> = {
 
 export default meta;
 
-type Story = StoryObj<typeof VirtualList>;
+type Story = StoryObj<typeof meta>;
 type StoryListProps = VirtualListProps<ListItem>;
 
 const BaseList = (props: Omit<VirtualListProps<{ id: number; label: string }>, 'items' | 'itemKey'>) => {
