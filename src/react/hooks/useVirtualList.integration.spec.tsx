@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import type { RefObject } from 'react';
-import { act, fireEvent, render } from '@testing-library/react';
+import { act, render } from '@testing-library/react';
 import { useVirtualList } from './useVirtualList';
 
 type ResizeEntry = {
@@ -161,7 +161,7 @@ describe('useVirtualList integration', () => {
 
     viewport.scrollTop = 0;
     await act(async () => {
-      fireEvent.scroll(viewport);
+      viewport.dispatchEvent(new Event('scroll'));
       await Promise.resolve();
     });
     await flushEffects();
