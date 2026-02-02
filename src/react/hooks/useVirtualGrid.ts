@@ -26,6 +26,7 @@ type UseVirtualGridArgs = {
   columns: AxisConfig;
   overscan?: GridOverscan;
   sticky?: { top?: number; bottom?: number; left?: number; right?: number };
+  ssr?: { rows?: number; columns?: number };
   onRangeChange?: (range: GridRange) => void;
 };
 
@@ -93,12 +94,19 @@ const createAxis = (config: AxisConfig, count: number, overscan?: number) => {
 };
 
 export function useVirtualGrid(args: UseVirtualGridArgs): UseVirtualGridResult {
-  const { rowCount, columnCount, viewportRef, rows, columns, overscan, sticky, onRangeChange } = args;
+  const { rowCount, columnCount, viewportRef, rows, columns, overscan, sticky, onRangeChange, ssr } = args;
   const overscanValue = resolveGridOverscan(overscan);
   const anchorManager = useMemo(() => createAnchorManager(), []);
   const [measureVersion, setMeasureVersion] = useState(0);
+  const [isHydrated, setIsHydrated] = useState(false);
   const scrollPosition = useScrollPosition(viewportRef);
   const viewportSize = useViewportSize(viewportRef);
+  const ssrRowCount = Math.max(0, Math.min(rowCount, ssr?.rows ?? 0));
+  const ssrColumnCount = Math.max(0, Math.min(columnCount, ssr?.columns ?? 0));
+
+  useEffect(() => {
+    setIsHydrated(true);
+  }, []);
 
   const rowAxis = useMemo(
     () => createAxis(rows, rowCount, overscanValue.rows),
@@ -117,6 +125,12 @@ export function useVirtualGrid(args: UseVirtualGridArgs): UseVirtualGridResult {
   columnAxisRef.current = columnAxis;
 
   const range = useMemo<GridRange>(() => {
+    if (!isHydrated && (ssrRowCount > 0 || ssrColumnCount > 0)) {
+      return {
+        rows: { start: 0, end: ssrRowCount },
+        columns: { start: 0, end: ssrColumnCount },
+      };
+    }
     const topOffset = (sticky?.top ?? 0) * rowExtent;
     const bottomOffset = (sticky?.bottom ?? 0) * rowExtent;
     const leftOffset = (sticky?.left ?? 0) * columnExtent;
@@ -150,6 +164,9 @@ export function useVirtualGrid(args: UseVirtualGridArgs): UseVirtualGridResult {
     viewportSize.height,
     viewportSize.width,
     measureVersion,
+    isHydrated,
+    ssrColumnCount,
+    ssrRowCount,
   ]);
 
   const rangeRef = useRef(range);

@@ -33,6 +33,11 @@ type VirtualListProps<T> = {
     renderStickyBottom?: (args: { items: readonly T[] }) => React.ReactNode;
   };
 
+  /** SSR fallback: render первых N элементов */
+  ssr?: {
+    count?: number;
+  };
+
   /** Скролл-контейнер */
   scroll?: {
     /** controlled: внешний scrollTop/scrollLeft (редко нужно) */
@@ -58,6 +63,11 @@ type VirtualListProps<T> = {
 export function VirtualList<T>(props: VirtualListProps<T>): JSX.Element;
 ```
 
+SSR fallback:
+- На сервере рендерятся первые `ssr.count` элементов (без доступа к DOM).
+- После гидрации происходит переход в режим измерений/виртуализации.
+- `ssr.count` считается от начала списка и включает sticky-top элементы.
+
 ---
 
 ### `VirtualGrid`
@@ -81,6 +91,12 @@ type VirtualGridProps<Cell> = {
 
   /** Sticky зоны */
   sticky?: StickyGridConfig;
+
+  /** SSR fallback: render первых N строк/колонок */
+  ssr?: {
+    rows?: number;
+    columns?: number;
+  };
 
   /** Окно рендера */
   overscan?: GridOverscan;
@@ -135,6 +151,11 @@ type GridRange = {
 ```ts
 export function VirtualGrid(props: VirtualGridProps<unknown>): JSX.Element;
 ```
+
+SSR fallback:
+- На сервере рендерится `ssr.rows` x `ssr.columns` ячеек (без доступа к DOM).
+- После гидрации происходит переход в режим измерений/виртуализации.
+- `ssr.rows` и `ssr.columns` считаются от начала осей и включают sticky-top/left зоны.
 
 ---
 

@@ -23,7 +23,8 @@ const getStickySlice = <T,>(items: readonly T[], count: number, fromEnd: boolean
 };
 
 function VirtualListInner<T>(props: VirtualListProps<T>, ref: Ref<VirtualListHandle>) {
-  const { items, itemKey, renderItem, layout, overscan, sticky, scroll, onRangeChange, className, style } = props;
+  const { items, itemKey, renderItem, layout, overscan, sticky, ssr, scroll, onRangeChange, className, style } =
+    props;
   const direction = layout?.direction ?? 'vertical';
   const sizeMode = layout?.sizeMode ?? 'fixed';
   const itemSize = layout?.itemSize;
@@ -47,6 +48,7 @@ function VirtualListInner<T>(props: VirtualListProps<T>, ref: Ref<VirtualListHan
   const maxBottomCount = Math.min(sticky?.bottom ?? 0, items.length - topCount);
   const bottomCount = renderStickyBottom ? maxBottomCount : 0;
   const bodyCount = Math.max(0, items.length - topCount - bottomCount);
+  const ssrBodyCount = Math.max(0, Math.min(bodyCount, (ssr?.count ?? 0) - topCount));
   const itemExtent = sizeMode === 'fixed' ? itemSize ?? 0 : estimatedItemSize ?? 0;
   const stickyTopSize = isVertical ? topCount * itemExtent : 0;
   const stickyBottomSize = isVertical ? bottomCount * itemExtent : 0;
@@ -71,6 +73,7 @@ function VirtualListInner<T>(props: VirtualListProps<T>, ref: Ref<VirtualListHan
     estimatedItemSize,
     overscan,
     sticky: { top: topCount, bottom: bottomCount },
+    ssr: ssrBodyCount > 0 ? { count: ssrBodyCount } : undefined,
     onRangeChange: (rangeValue) =>
       onRangeChange?.({
         items: { start: rangeValue.start + topCount, end: rangeValue.end + topCount },
