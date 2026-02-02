@@ -2,6 +2,9 @@ import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRe
 import type { CSSProperties, MutableRefObject, Ref, RefObject, ReactElement } from 'react';
 import { useScrollPosition } from './hooks/useScrollPosition';
 import { useVirtualGrid } from './hooks/useVirtualGrid';
+import { CornerLayer } from './internal/layers/CornerLayer';
+import { StickyLayer } from './internal/layers/StickyLayer';
+import { VirtualBodyLayer } from './internal/layers/VirtualBodyLayer';
 import type { AxisConfig } from '../shared/types';
 import type { VirtualGridHandle, VirtualGridProps } from './types';
 
@@ -68,26 +71,64 @@ function VirtualGridInner(props: VirtualGridProps, ref: Ref<VirtualGridHandle>) 
     [scroll?.containerRef],
   );
 
+  const renderTopStickyRow = sticky?.renderTopStickyRow;
+  const renderLeftStickyColumn = sticky?.renderLeftStickyColumn;
+  const renderCorner = sticky?.renderCorner;
+
+  const topCount = renderTopStickyRow ? Math.min(sticky?.top ?? 0, rowCount) : 0;
+  const bottomCount = renderTopStickyRow ? Math.min(sticky?.bottom ?? 0, rowCount - topCount) : 0;
+  const leftCount = renderLeftStickyColumn ? Math.min(sticky?.left ?? 0, columnCount) : 0;
+  const rightCount = renderLeftStickyColumn
+    ? Math.min(sticky?.right ?? 0, columnCount - leftCount)
+    : 0;
+  const bodyRowCount = Math.max(0, rowCount - topCount - bottomCount);
+  const bodyColumnCount = Math.max(0, columnCount - leftCount - rightCount);
+
+  const rowSize = useCallback((index: number) => getAxisItemSize(rows, index), [rows]);
+  const columnSize = useCallback((index: number) => getAxisItemSize(columns, index), [columns]);
+
+  const topRows = useMemo(() => buildStickyOffsets(0, topCount, rowSize), [rowSize, topCount]);
+  const bottomRows = useMemo(
+    () => buildStickyOffsets(rowCount - bottomCount, bottomCount, rowSize),
+    [bottomCount, rowCount, rowSize],
+  );
+  const leftColumns = useMemo(() => buildStickyOffsets(0, leftCount, columnSize), [columnSize, leftCount]);
+  const rightColumns = useMemo(
+    () => buildStickyOffsets(columnCount - rightCount, rightCount, columnSize),
+    [columnCount, columnSize, rightCount],
+  );
+
+  const topHeight = sumAxisSizes(0, topCount, rowSize);
+  const bottomHeight = sumAxisSizes(rowCount - bottomCount, bottomCount, rowSize);
+  const leftWidth = sumAxisSizes(0, leftCount, columnSize);
+  const rightWidth = sumAxisSizes(columnCount - rightCount, rightCount, columnSize);
+
   const {
     cells,
     totalHeight,
     totalWidth,
     range,
-    scrollToCell,
-    scrollToColumn,
-    scrollToRow,
+    scrollToColumn: scrollToBodyColumn,
+    scrollToRow: scrollToBodyRow,
     measureRowElement,
     measureColumnElement,
     measure,
   } = useVirtualGrid({
-    rowCount,
-    columnCount,
+    rowCount: bodyRowCount,
+    columnCount: bodyColumnCount,
     viewportRef,
     rows,
     columns,
     overscan,
-    sticky,
-    onRangeChange,
+    sticky: { top: topCount, bottom: bottomCount, left: leftCount, right: rightCount },
+    onRangeChange: (rangeValue) =>
+      onRangeChange?.({
+        rows: { start: rangeValue.rows.start + topCount, end: rangeValue.rows.end + topCount },
+        columns: {
+          start: rangeValue.columns.start + leftCount,
+          end: rangeValue.columns.end + leftCount,
+        },
+      }),
   });
 
   const scrollPosition = useScrollPosition(viewportRef);
@@ -112,17 +153,81 @@ function VirtualGridInner(props: VirtualGridProps, ref: Ref<VirtualGridHandle>) 
   useImperativeHandle(
     ref,
     () => ({
-      scrollToRow,
-      scrollToColumn,
-      scrollToCell,
+      scrollToRow: (rowIndex, options) => {
+        if (bodyRowCount <= 0) {
+          return;
+        }
+        const bodyIndex = rowIndex - topCount;
+        if (bodyIndex < 0) {
+          scrollToBodyRow(0, { ...options, align: 'start' });
+          return;
+        }
+        if (bodyIndex >= bodyRowCount) {
+          scrollToBodyRow(bodyRowCount - 1, { ...options, align: 'end' });
+          return;
+        }
+        scrollToBodyRow(bodyIndex, options);
+      },
+      scrollToColumn: (columnIndex, options) => {
+        if (bodyColumnCount <= 0) {
+          return;
+        }
+        const bodyIndex = columnIndex - leftCount;
+        if (bodyIndex < 0) {
+          scrollToBodyColumn(0, { ...options, align: 'start' });
+          return;
+        }
+        if (bodyIndex >= bodyColumnCount) {
+          scrollToBodyColumn(bodyColumnCount - 1, { ...options, align: 'end' });
+          return;
+        }
+        scrollToBodyColumn(bodyIndex, options);
+      },
+      scrollToCell: (rowIndex, columnIndex, options) => {
+        if (bodyRowCount <= 0 || bodyColumnCount <= 0) {
+          return;
+        }
+        const bodyRow = rowIndex - topCount;
+        const bodyColumn = columnIndex - leftCount;
+        if (bodyRow >= 0 && bodyRow < bodyRowCount) {
+          scrollToBodyRow(bodyRow, options);
+        } else if (bodyRow < 0) {
+          scrollToBodyRow(0, { ...options, align: 'start' });
+        } else {
+          scrollToBodyRow(bodyRowCount - 1, { ...options, align: 'end' });
+        }
+        if (bodyColumn >= 0 && bodyColumn < bodyColumnCount) {
+          scrollToBodyColumn(bodyColumn, options);
+        } else if (bodyColumn < 0) {
+          scrollToBodyColumn(0, { ...options, align: 'start' });
+        } else {
+          scrollToBodyColumn(bodyColumnCount - 1, { ...options, align: 'end' });
+        }
+      },
       getScrollPosition: () => ({
         top: viewportRef.current?.scrollTop ?? 0,
         left: viewportRef.current?.scrollLeft ?? 0,
       }),
-      getVisibleRange: () => range,
+      getVisibleRange: () => ({
+        rows: { start: range.rows.start + topCount, end: range.rows.end + topCount },
+        columns: { start: range.columns.start + leftCount, end: range.columns.end + leftCount },
+      }),
       measure,
     }),
-    [measure, range, scrollToCell, scrollToColumn, scrollToRow, viewportRef],
+    [
+      bodyColumnCount,
+      bodyRowCount,
+      leftCount,
+      measure,
+      range.columns.end,
+      range.columns.start,
+      range.rows.end,
+      range.rows.start,
+      scrollToBodyColumn,
+      scrollToBodyRow,
+      topCount,
+      viewportRef,
+    ],
   );
 
   const viewportStyle = useMemo<CSSProperties>(
@@ -137,48 +242,27 @@ function VirtualGridInner(props: VirtualGridProps, ref: Ref<VirtualGridHandle>) 
   const contentStyle = useMemo<CSSProperties>(
     () => ({
       position: 'relative',
-      width: totalWidth,
-      height: totalHeight,
+      width: totalWidth + leftWidth + rightWidth,
+      height: totalHeight + topHeight + bottomHeight,
+      paddingTop: topHeight,
+      paddingBottom: bottomHeight,
+      paddingLeft: leftWidth,
+      paddingRight: rightWidth,
+      boxSizing: 'border-box',
     }),
-    [totalHeight, totalWidth],
+    [bottomHeight, leftWidth, rightWidth, topHeight, totalHeight, totalWidth],
   );
-
-  const topCount = Math.min(sticky?.top ?? 0, rowCount);
-  const bottomCount = Math.min(sticky?.bottom ?? 0, rowCount);
-  const leftCount = Math.min(sticky?.left ?? 0, columnCount);
-  const rightCount = Math.min(sticky?.right ?? 0, columnCount);
-
-  const rowSize = useCallback((index: number) => getAxisItemSize(rows, index), [rows]);
-  const columnSize = useCallback((index: number) => getAxisItemSize(columns, index), [columns]);
-
-  const topRows = useMemo(() => buildStickyOffsets(0, topCount, rowSize), [rowSize, topCount]);
-  const bottomRows = useMemo(
-    () => buildStickyOffsets(rowCount - bottomCount, bottomCount, rowSize),
-    [bottomCount, rowCount, rowSize],
-  );
-  const leftColumns = useMemo(() => buildStickyOffsets(0, leftCount, columnSize), [columnSize, leftCount]);
-  const rightColumns = useMemo(
-    () => buildStickyOffsets(columnCount - rightCount, rightCount, columnSize),
-    [columnCount, columnSize, rightCount],
-  );
-
-  const topHeight = sumAxisSizes(0, topCount, rowSize);
-  const bottomHeight = sumAxisSizes(rowCount - bottomCount, bottomCount, rowSize);
-  const leftWidth = sumAxisSizes(0, leftCount, columnSize);
-  const rightWidth = sumAxisSizes(columnCount - rightCount, rightCount, columnSize);
 
   const shouldMeasureRow = (columnIndex: number) => columnIndex === range.columns.start;
   const shouldMeasureColumn = (rowIndex: number) => rowIndex === range.rows.start;
 
-  const renderTopStickyRow = sticky?.renderTopStickyRow;
-  const renderLeftStickyColumn = sticky?.renderLeftStickyColumn;
-  const renderCorner = sticky?.renderCorner;
-
   return (
     <div ref={setViewportRef} className={className} style={viewportStyle}>
-      <div style={contentStyle}>
+      <VirtualBodyLayer style={contentStyle}>
         {cells.map((cell) => {
-          const key = cellKey ? cellKey(cell.rowIndex, cell.columnIndex) : cell.key;
+          const actualRowIndex = cell.rowIndex + topCount;
+          const actualColumnIndex = cell.columnIndex + leftCount;
+          const key = cellKey ? cellKey(actualRowIndex, actualColumnIndex) : cell.key;
           const measureRow = !!measureRowElement && shouldMeasureRow(cell.columnIndex);
           const measureColumn = !!measureColumnElement && shouldMeasureColumn(cell.rowIndex);
           const setRef = (node: HTMLElement | null) => {
@@ -202,89 +286,60 @@ function VirtualGridInner(props: VirtualGridProps, ref: Ref<VirtualGridHandle>) 
                 height: cell.height,
               }}
             >
-              {renderCell({ rowIndex: cell.rowIndex, columnIndex: cell.columnIndex })}
+              {renderCell({ rowIndex: actualRowIndex, columnIndex: actualColumnIndex })}
             </div>
           );
         })}
-      </div>
+      </VirtualBodyLayer>
 
-      {(renderTopStickyRow || renderLeftStickyColumn || renderCorner) &&
-        (topCount > 0 || bottomCount > 0 || leftCount > 0 || rightCount > 0) && (
-          <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 2 }}>
-            {renderTopStickyRow &&
-              topRows.map((row) => (
-                <div
-                  key={`top-${row.index}`}
-                  style={{ position: 'absolute', top: row.offset, left: 0, right: 0, height: row.size }}
-                >
-                  <div style={{ pointerEvents: 'auto', height: '100%' }}>
-                    {renderTopStickyRow({ rowIndex: row.index })}
-                  </div>
-                </div>
-              ))}
-            {renderTopStickyRow &&
-              bottomRows.map((row) => (
-                <div
-                  key={`bottom-${row.index}`}
-                  style={{ position: 'absolute', bottom: row.offset, left: 0, right: 0, height: row.size }}
-                >
-                  <div style={{ pointerEvents: 'auto', height: '100%' }}>
-                    {renderTopStickyRow({ rowIndex: row.index })}
-                  </div>
-                </div>
-              ))}
-            {renderLeftStickyColumn &&
-              leftColumns.map((column) => (
-                <div
-                  key={`left-${column.index}`}
-                  style={{ position: 'absolute', left: column.offset, top: 0, bottom: 0, width: column.size }}
-                >
-                  <div style={{ pointerEvents: 'auto', height: '100%' }}>
-                    {renderLeftStickyColumn({ columnIndex: column.index })}
-                  </div>
-                </div>
-              ))}
-            {renderLeftStickyColumn &&
-              rightColumns.map((column) => (
-                <div
-                  key={`right-${column.index}`}
-                  style={{ position: 'absolute', right: column.offset, top: 0, bottom: 0, width: column.size }}
-                >
-                  <div style={{ pointerEvents: 'auto', height: '100%' }}>
-                    {renderLeftStickyColumn({ columnIndex: column.index })}
-                  </div>
-                </div>
-              ))}
-            {renderCorner && topCount > 0 && leftCount > 0 && (
-              <div style={{ position: 'absolute', top: 0, left: 0, width: leftWidth, height: topHeight }}>
-                <div style={{ pointerEvents: 'auto', height: '100%' }}>
-                  {renderCorner({ corner: 'tl' })}
-                </div>
-              </div>
-            )}
-            {renderCorner && topCount > 0 && rightCount > 0 && (
-              <div style={{ position: 'absolute', top: 0, right: 0, width: rightWidth, height: topHeight }}>
-                <div style={{ pointerEvents: 'auto', height: '100%' }}>
-                  {renderCorner({ corner: 'tr' })}
-                </div>
-              </div>
-            )}
-            {renderCorner && bottomCount > 0 && leftCount > 0 && (
-              <div style={{ position: 'absolute', bottom: 0, left: 0, width: leftWidth, height: bottomHeight }}>
-                <div style={{ pointerEvents: 'auto', height: '100%' }}>
-                  {renderCorner({ corner: 'bl' })}
-                </div>
-              </div>
-            )}
-            {renderCorner && bottomCount > 0 && rightCount > 0 && (
-              <div style={{ position: 'absolute', bottom: 0, right: 0, width: rightWidth, height: bottomHeight }}>
-                <div style={{ pointerEvents: 'auto', height: '100%' }}>
-                  {renderCorner({ corner: 'br' })}
-                </div>
-              </div>
-            )}
-          </div>
-        )}
+      {renderTopStickyRow && topRows.length > 0 && (
+        <StickyLayer
+          orientation="row"
+          position="start"
+          items={topRows}
+          scrollOffset={scrollPosition.left}
+          render={({ index }) => renderTopStickyRow({ rowIndex: index })}
+        />
+      )}
+      {renderTopStickyRow && bottomRows.length > 0 && (
+        <StickyLayer
+          orientation="row"
+          position="end"
+          items={bottomRows}
+          scrollOffset={scrollPosition.left}
+          render={({ index }) => renderTopStickyRow({ rowIndex: index })}
+        />
+      )}
+      {renderLeftStickyColumn && leftColumns.length > 0 && (
+        <StickyLayer
+          orientation="column"
+          position="start"
+          items={leftColumns}
+          scrollOffset={scrollPosition.top}
+          render={({ index }) => renderLeftStickyColumn({ columnIndex: index })}
+        />
+      )}
+      {renderLeftStickyColumn && rightColumns.length > 0 && (
+        <StickyLayer
+          orientation="column"
+          position="end"
+          items={rightColumns}
+          scrollOffset={scrollPosition.top}
+          render={({ index }) => renderLeftStickyColumn({ columnIndex: index })}
+        />
+      )}
+      {renderCorner && topCount > 0 && leftCount > 0 && (
+        <CornerLayer corner="tl" width={leftWidth} height={topHeight} render={renderCorner} />
+      )}
+      {renderCorner && topCount > 0 && rightCount > 0 && (
+        <CornerLayer corner="tr" width={rightWidth} height={topHeight} render={renderCorner} />
+      )}
+      {renderCorner && bottomCount > 0 && leftCount > 0 && (
+        <CornerLayer corner="bl" width={leftWidth} height={bottomHeight} render={renderCorner} />
+      )}
+      {renderCorner && bottomCount > 0 && rightCount > 0 && (
+        <CornerLayer corner="br" width={rightWidth} height={bottomHeight} render={renderCorner} />
+      )}
     </div>
   );
 }

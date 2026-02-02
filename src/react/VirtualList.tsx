@@ -2,6 +2,8 @@ import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRe
 import type { CSSProperties, MutableRefObject, Ref, RefObject, ReactElement } from 'react';
 import { useScrollPosition } from './hooks/useScrollPosition';
 import { useVirtualList } from './hooks/useVirtualList';
+import { StickyListLayer } from './internal/layers/StickyListLayer';
+import { VirtualBodyLayer } from './internal/layers/VirtualBodyLayer';
 import type { VirtualListHandle, VirtualListProps } from './types';
 
 const assignRef = (target: RefObject<HTMLElement | null> | undefined, value: HTMLElement | null) => {
@@ -26,6 +28,7 @@ function VirtualListInner<T>(props: VirtualListProps<T>, ref: Ref<VirtualListHan
   const sizeMode = layout?.sizeMode ?? 'fixed';
   const itemSize = layout?.itemSize;
   const estimatedItemSize = layout?.estimatedItemSize;
+  const isVertical = direction === 'vertical';
 
   const internalRef = useRef<HTMLElement | null>(null);
   const viewportRef = (scroll?.containerRef ?? internalRef) as RefObject<HTMLElement | null>;
@@ -37,17 +40,41 @@ function VirtualListInner<T>(props: VirtualListProps<T>, ref: Ref<VirtualListHan
     [scroll?.containerRef],
   );
 
-  const { items: virtualItems, totalSize, scrollToIndex, measureElement, range, measure } = useVirtualList({
-    count: items.length,
-    itemKey: (index) => itemKey(items[index], index),
+  const renderStickyTop = isVertical ? sticky?.renderStickyTop : undefined;
+  const renderStickyBottom = isVertical ? sticky?.renderStickyBottom : undefined;
+  const maxTopCount = Math.min(sticky?.top ?? 0, items.length);
+  const topCount = renderStickyTop ? maxTopCount : 0;
+  const maxBottomCount = Math.min(sticky?.bottom ?? 0, items.length - topCount);
+  const bottomCount = renderStickyBottom ? maxBottomCount : 0;
+  const bodyCount = Math.max(0, items.length - topCount - bottomCount);
+  const itemExtent = sizeMode === 'fixed' ? itemSize ?? 0 : estimatedItemSize ?? 0;
+  const stickyTopSize = isVertical ? topCount * itemExtent : 0;
+  const stickyBottomSize = isVertical ? bottomCount * itemExtent : 0;
+
+  const {
+    items: virtualItems,
+    totalSize,
+    scrollToIndex: scrollToBodyIndex,
+    measureElement,
+    range,
+    measure,
+  } = useVirtualList({
+    count: bodyCount,
+    itemKey: (index) => {
+      const actualIndex = index + topCount;
+      return itemKey(items[actualIndex], actualIndex);
+    },
     viewportRef,
     direction,
     sizeMode,
     itemSize,
     estimatedItemSize,
     overscan,
-    sticky,
-    onRangeChange: (rangeValue) => onRangeChange?.({ items: rangeValue }),
+    sticky: { top: topCount, bottom: bottomCount },
+    onRangeChange: (rangeValue) =>
+      onRangeChange?.({
+        items: { start: rangeValue.start + topCount, end: rangeValue.end + topCount },
+      }),
   });
 
   const scrollPosition = useScrollPosition(viewportRef);
@@ -72,15 +99,29 @@ function VirtualListInner<T>(props: VirtualListProps<T>, ref: Ref<VirtualListHan
   useImperativeHandle(
     ref,
     () => ({
-      scrollToIndex,
+      scrollToIndex: (index, options) => {
+        if (bodyCount <= 0) {
+          return;
+        }
+        const bodyIndex = index - topCount;
+        if (bodyIndex < 0) {
+          scrollToBodyIndex(0, { ...options, align: 'start' });
+          return;
+        }
+        if (bodyIndex >= bodyCount) {
+          scrollToBodyIndex(bodyCount - 1, { ...options, align: 'end' });
+          return;
+        }
+        scrollToBodyIndex(bodyIndex, options);
+      },
       getScrollPosition: () => ({
         top: viewportRef.current?.scrollTop ?? 0,
         left: viewportRef.current?.scrollLeft ?? 0,
       }),
-      getVisibleRange: () => ({ start: range.start, end: range.end }),
+      getVisibleRange: () => ({ start: range.start + topCount, end: range.end + topCount }),
       measure,
     }),
-    [measure, range.end, range.start, scrollToIndex, viewportRef],
+    [bodyCount, measure, range.end, range.start, scrollToBodyIndex, topCount, viewportRef],
   );
 
   const viewportStyle = useMemo<CSSProperties>(
@@ -96,16 +137,24 @@ function VirtualListInner<T>(props: VirtualListProps<T>, ref: Ref<VirtualListHan
     if (direction === 'horizontal') {
       return { position: 'relative', width: totalSize, height: '100%' };
     }
-    return { position: 'relative', height: totalSize, width: '100%' };
-  }, [direction, totalSize]);
+    return {
+      position: 'relative',
+      height: totalSize,
+      width: '100%',
+      paddingTop: stickyTopSize,
+      paddingBottom: stickyBottomSize,
+      boxSizing: 'border-box',
+    };
+  }, [direction, stickyBottomSize, stickyTopSize, totalSize]);
 
-  const stickyTopItems = getStickySlice(items, sticky?.top ?? 0, false);
-  const stickyBottomItems = getStickySlice(items, sticky?.bottom ?? 0, true);
+  const stickyTopItems = getStickySlice(items, topCount, false);
+  const stickyBottomItems = getStickySlice(items, bottomCount, true);
 
   return (
     <div ref={setViewportRef} className={className} style={viewportStyle}>
-      <div style={contentStyle}>
+      <VirtualBodyLayer style={contentStyle}>
         {virtualItems.map((virtualItem) => {
+          const actualIndex = virtualItem.index + topCount;
           const itemStyle: CSSProperties =
             direction === 'horizontal'
               ? {
@@ -127,20 +176,20 @@ function VirtualListInner<T>(props: VirtualListProps<T>, ref: Ref<VirtualListHan
               style={itemStyle}
               ref={(element) => measureElement?.(virtualItem.index, element)}
             >
-              {renderItem({ item: items[virtualItem.index], index: virtualItem.index })}
+              {renderItem({ item: items[actualIndex], index: actualIndex })}
             </div>
           );
         })}
-      </div>
-      {sticky?.renderStickyTop && stickyTopItems.length > 0 && (
-        <div style={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 2 }}>
-          {sticky.renderStickyTop({ items: stickyTopItems })}
-        </div>
+      </VirtualBodyLayer>
+      {renderStickyTop && stickyTopItems.length > 0 && (
+        <StickyListLayer position="top" size={stickyTopSize} scrollOffset={scrollPosition.left}>
+          {renderStickyTop({ items: stickyTopItems })}
+        </StickyListLayer>
       )}
-      {sticky?.renderStickyBottom && stickyBottomItems.length > 0 && (
-        <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, zIndex: 2 }}>
-          {sticky.renderStickyBottom({ items: stickyBottomItems })}
-        </div>
+      {renderStickyBottom && stickyBottomItems.length > 0 && (
+        <StickyListLayer position="bottom" size={stickyBottomSize} scrollOffset={scrollPosition.left}>
+          {renderStickyBottom({ items: stickyBottomItems })}
+        </StickyListLayer>
       )}
     </div>
   );
