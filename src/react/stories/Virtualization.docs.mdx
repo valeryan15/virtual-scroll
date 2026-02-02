@@ -1,0 +1,101 @@
+import { Meta, Title, Subtitle, Description, Primary, Controls, Stories } from '@storybook/blocks';
+
+<Meta title="Docs/Virtualization" />
+
+<Title>Virtualization Library</Title>
+<Subtitle>React adapter over core virtualization algorithms</Subtitle>
+
+<Description>
+This documentation page provides usage guidance, behavioral notes, and trade-offs for the
+VirtualList and VirtualGrid components.
+</Description>
+
+## Architecture overview
+- **core/** contains pure math and range calculations.
+- **react/** adapts core to DOM and React.
+- **shared/** defines public contracts.
+
+The React layer should not re-implement core logic. Core stays DOM-free.
+
+## Usage basics
+
+### VirtualList (fixed)
+
+```tsx
+<VirtualList
+  items={items}
+  itemKey={(item) => item.id}
+  renderItem={({ item }) => <Row item={item} />}
+  layout={{ sizeMode: 'fixed', itemSize: 36 }}
+  overscan={2}
+/>
+```
+
+### VirtualList (dynamic)
+
+```tsx
+<VirtualList
+  items={items}
+  itemKey={(item) => item.id}
+  renderItem={({ item }) => <DynamicRow item={item} />}
+  layout={{ sizeMode: 'dynamic', estimatedItemSize: 36 }}
+  overscan={2}
+/>
+```
+
+### VirtualGrid (fixed)
+
+```tsx
+<VirtualGrid
+  rowCount={200}
+  columnCount={40}
+  rows={{ sizeMode: 'fixed', itemSize: 36 }}
+  columns={{ sizeMode: 'fixed', itemSize: 120 }}
+  renderCell={({ rowIndex, columnIndex }) => (
+    <Cell rowIndex={rowIndex} columnIndex={columnIndex} />
+  )}
+/>
+```
+
+## Behavior notes
+
+### Scroll anchoring (ADR-003)
+- Anchoring is always enabled in dynamic mode.
+- Prepend operations should not cause scroll jumps.
+
+### Dynamic sizes (ADR-005)
+- `estimatedItemSize` is required.
+- Dynamic measurement updates are batched with ResizeObserver + RAF.
+- Avoid heavy layout thrashing inside item render.
+
+### SSR fallback
+Use SSR fallback to render the first N items without DOM access:
+
+```tsx
+<VirtualList
+  items={items}
+  itemKey={(item) => item.id}
+  renderItem={({ item }) => <Row item={item} />}
+  layout={{ sizeMode: 'fixed', itemSize: 36 }}
+  ssr={{ count: 6 }}
+/>
+```
+
+For grids:
+
+```tsx
+<VirtualGrid
+  rowCount={50}
+  columnCount={30}
+  rows={{ sizeMode: 'fixed', itemSize: 36 }}
+  columns={{ sizeMode: 'fixed', itemSize: 120 }}
+  renderCell={({ rowIndex, columnIndex }) => (
+    <Cell rowIndex={rowIndex} columnIndex={columnIndex} />
+  )}
+  ssr={{ rows: 2, columns: 3 }}
+/>
+```
+
+## Component stories
+
+<Stories />
