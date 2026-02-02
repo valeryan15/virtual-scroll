@@ -10,7 +10,7 @@ const viewportStyle: React.CSSProperties = {
   border: '1px solid #e0e0e0',
   borderRadius: 8,
   background: '#fff',
-  overflow: 'hidden',
+  overflow: 'auto',
   boxShadow: '0 6px 18px rgba(0,0,0,0.08)',
 };
 
@@ -38,7 +38,12 @@ export default meta;
 
 type Story = StoryObj<typeof VirtualGrid>;
 
-const BaseGrid = ({ rows, columns, rowCount, columnCount }: {
+const BaseGrid = ({
+  rows,
+  columns,
+  rowCount,
+  columnCount,
+}: {
   rows: AxisConfig;
   columns: AxisConfig;
   rowCount: number;
@@ -99,24 +104,16 @@ export const StickyRowsColumns: Story = {
         top: 1,
         left: 1,
         renderTopStickyRow: ({ rowIndex }) => (
-          <div style={{ ...cellStyle, height: 36, background: '#fff7e6', fontWeight: 600 }}>
-            Header {rowIndex + 1}
-          </div>
+          <div style={{ ...cellStyle, height: 36, background: '#fff7e6', fontWeight: 600 }}>Header {rowIndex + 1}</div>
         ),
         renderLeftStickyColumn: ({ columnIndex }) => (
-          <div style={{ ...cellStyle, width: 120, background: '#f6ffed', fontWeight: 600 }}>
-            Col {columnIndex + 1}
-          </div>
+          <div style={{ ...cellStyle, width: 120, background: '#f6ffed', fontWeight: 600 }}>Col {columnIndex + 1}</div>
         ),
         renderCorner: ({ corner }) => (
-          <div style={{ ...cellStyle, background: '#e6f7ff', fontWeight: 700 }}>
-            {corner.toUpperCase()}
-          </div>
+          <div style={{ ...cellStyle, background: '#e6f7ff', fontWeight: 700 }}>{corner.toUpperCase()}</div>
         ),
       }}
-      renderCell={({ rowIndex, columnIndex }) => (
-        <div style={cellStyle}>{formatCellLabel(rowIndex, columnIndex)}</div>
-      )}
+      renderCell={({ rowIndex, columnIndex }) => <div style={cellStyle}>{formatCellLabel(rowIndex, columnIndex)}</div>}
       style={viewportStyle}
     />
   ),

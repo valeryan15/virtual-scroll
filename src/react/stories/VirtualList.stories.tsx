@@ -11,7 +11,7 @@ const viewportStyle: React.CSSProperties = {
   border: '1px solid #e0e0e0',
   borderRadius: 8,
   background: '#fff',
-  overflow: 'hidden',
+  overflow: 'auto',
   boxShadow: '0 6px 18px rgba(0,0,0,0.08)',
 };
 

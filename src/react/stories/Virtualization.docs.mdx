@@ -1,6 +1,8 @@
-import { Meta, Title, Subtitle, Description, Primary, Controls, Stories } from '@storybook/blocks';
+import { Meta, Title, Subtitle, Description, Primary, Controls, Stories } from '@storybook/addon-docs/blocks';
+import * as VirtualListStories from './VirtualList.stories';
+import * as VirtualGridStories from './VirtualGrid.stories';
 
-<Meta title="Docs/Virtualization" />
+<Meta of={VirtualListStories} />
 
 <Title>Virtualization Library</Title>
 <Subtitle>React adapter over core virtualization algorithms</Subtitle>
@@ -98,4 +100,5 @@ For grids:
 
 ## Component stories
 
-<Stories />
+<Stories of={VirtualListStories} />
+<Stories of={VirtualGridStories} />
