@@ -117,6 +117,10 @@ describe('VirtualGrid integration', () => {
       triggerResize(viewport, { width: 120, height: 60 });
     });
 
+    const bodyLayer = container.querySelector('[data-virtual-layer="body"]') as HTMLElement;
+    expect(bodyLayer?.style.paddingTop).toBe('20px');
+    expect(bodyLayer?.style.paddingLeft).toBe('30px');
+
     expect(getByTestId('sticky-top-0')).toBeTruthy();
     expect(getByTestId('sticky-left-0')).toBeTruthy();
     expect(getByTestId('sticky-corner-tl')).toBeTruthy();
@@ -164,5 +168,51 @@ describe('VirtualGrid integration', () => {
 
     expect(queryByTestId('cell-0-0')).toBeFalsy();
     expect(queryByTestId('cell-4-4')).toBeTruthy();
+  });
+
+  it('syncs sticky layers with scroll offsets', async () => {
+    const baseProps = {
+      rowCount: 4,
+      columnCount: 4,
+      rows: { sizeMode: 'fixed' as const, itemSize: 20 },
+      columns: { sizeMode: 'fixed' as const, itemSize: 30 },
+      overscan: 0,
+      renderCell: ({ rowIndex, columnIndex }: { rowIndex: number; columnIndex: number }) => (
+        <div data-testid={`cell-${rowIndex}-${columnIndex}`} />
+      ),
+      sticky: {
+        top: 1,
+        left: 1,
+        renderTopStickyRow: ({ rowIndex }: { rowIndex: number }) => <div data-testid={`sticky-top-${rowIndex}`} />,
+        renderLeftStickyColumn: ({ columnIndex }: { columnIndex: number }) => (
+          <div data-testid={`sticky-left-${columnIndex}`} />
+        ),
+      },
+    };
+
+    const { container, getByTestId } = render(<VirtualGrid {...baseProps} />);
+
+    const viewport = container.firstElementChild as HTMLElement;
+    setupViewport(viewport);
+    setClientSize(viewport, { width: 120, height: 60 });
+    viewport.scrollLeft = 30;
+    viewport.scrollTop = 40;
+    await flushEffects();
+
+    act(() => {
+      triggerResize(viewport, { width: 120, height: 60 });
+    });
+
+    await act(async () => {
+      viewport.dispatchEvent(new Event('scroll'));
+      await Promise.resolve();
+    });
+
+    await flushEffects();
+
+    const topWrapper = getByTestId('sticky-top-0').parentElement?.parentElement;
+    const leftWrapper = getByTestId('sticky-left-0').parentElement?.parentElement;
+    expect(topWrapper?.style.transform).toBe('translateX(-30px)');
+    expect(leftWrapper?.style.transform).toBe('translateY(-40px)');
   });
 });

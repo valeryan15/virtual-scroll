@@ -156,6 +156,9 @@ describe('VirtualList integration', () => {
       triggerResize(viewport, { width: 200, height: 40 });
     });
 
+    const bodyLayer = container.querySelector('[data-virtual-layer="body"]') as HTMLElement;
+    expect(bodyLayer?.style.paddingTop).toBe('20px');
+    expect(bodyLayer?.style.paddingBottom).toBe('20px');
     expect(getByTestId('sticky-top').textContent).toBe('Alpha');
     expect(getByTestId('sticky-bottom').textContent).toBe('Gamma');
   });

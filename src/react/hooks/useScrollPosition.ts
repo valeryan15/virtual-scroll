@@ -54,7 +54,7 @@ export function useScrollPosition(viewportRef: RefObject<HTMLElement | null>): S
         left: element.scrollLeft,
       });
     }
-  }, [position.left, position.top, viewportRef]);
+  });
 
   return position;
 }
