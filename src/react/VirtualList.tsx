@@ -81,9 +81,13 @@ function VirtualListInner<T>(props: VirtualListProps<T>, ref: Ref<VirtualListHan
   });
 
   const scrollPosition = useScrollPosition(viewportRef);
+  const onScrollRef = useRef(scroll?.onScroll);
   useEffect(() => {
-    scroll?.onScroll?.(scrollPosition);
-  }, [scroll, scrollPosition]);
+    onScrollRef.current = scroll?.onScroll;
+  }, [scroll?.onScroll]);
+  useEffect(() => {
+    onScrollRef.current?.(scrollPosition);
+  }, [scrollPosition]);
 
   useEffect(() => {
     const element = viewportRef.current;

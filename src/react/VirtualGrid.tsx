@@ -136,9 +136,13 @@ function VirtualGridInner(props: VirtualGridProps, ref: Ref<VirtualGridHandle>) 
   });
 
   const scrollPosition = useScrollPosition(viewportRef);
+  const onScrollRef = useRef(scroll?.onScroll);
   useEffect(() => {
-    scroll?.onScroll?.(scrollPosition);
-  }, [scroll, scrollPosition]);
+    onScrollRef.current = scroll?.onScroll;
+  }, [scroll?.onScroll]);
+  useEffect(() => {
+    onScrollRef.current?.(scrollPosition);
+  }, [scrollPosition]);
 
   useEffect(() => {
     const element = viewportRef.current;
