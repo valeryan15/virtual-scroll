@@ -307,8 +307,8 @@ function VirtualGridInner(props: VirtualGridProps, ref: Ref<VirtualGridHandle>) 
           orientation="row"
           position="start"
           items={topRows}
-          scrollOffset={currentScrollTop}
-          scrollAxis="y"
+          scrollOffsetX={currentScrollLeft}
+          scrollOffsetY={currentScrollTop}
           render={({ index }) => renderTopStickyRow({ rowIndex: index })}
         />
       )}
@@ -317,8 +317,8 @@ function VirtualGridInner(props: VirtualGridProps, ref: Ref<VirtualGridHandle>) 
           orientation="row"
           position="end"
           items={bottomRows}
-          scrollOffset={currentScrollTop}
-          scrollAxis="y"
+          scrollOffsetX={currentScrollLeft}
+          scrollOffsetY={currentScrollTop}
           render={({ index }) => renderTopStickyRow({ rowIndex: index })}
         />
       )}
@@ -327,8 +327,8 @@ function VirtualGridInner(props: VirtualGridProps, ref: Ref<VirtualGridHandle>) 
           orientation="column"
           position="start"
           items={leftColumns}
-          scrollOffset={currentScrollLeft}
-          scrollAxis="x"
+          scrollOffsetX={currentScrollLeft}
+          scrollOffsetY={currentScrollTop}
           render={({ index }) => renderLeftStickyColumn({ columnIndex: index })}
         />
       )}
@@ -337,8 +337,8 @@ function VirtualGridInner(props: VirtualGridProps, ref: Ref<VirtualGridHandle>) 
           orientation="column"
           position="end"
           items={rightColumns}
-          scrollOffset={currentScrollLeft}
-          scrollAxis="x"
+          scrollOffsetX={currentScrollLeft}
+          scrollOffsetY={currentScrollTop}
           render={({ index }) => renderLeftStickyColumn({ columnIndex: index })}
         />
       )}

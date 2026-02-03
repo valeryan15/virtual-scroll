@@ -190,12 +190,22 @@ function VirtualListInner<T>(props: VirtualListProps<T>, ref: Ref<VirtualListHan
         })}
       </VirtualBodyLayer>
       {renderStickyTop && stickyTopItems.length > 0 && (
-        <StickyListLayer position="top" size={stickyTopSize} scrollOffset={currentScrollTop} scrollAxis="y">
+        <StickyListLayer
+          position="top"
+          size={stickyTopSize}
+          scrollOffsetX={viewportRef.current?.scrollLeft ?? scrollPosition.left}
+          scrollOffsetY={currentScrollTop}
+        >
           {renderStickyTop({ items: stickyTopItems })}
         </StickyListLayer>
       )}
       {renderStickyBottom && stickyBottomItems.length > 0 && (
-        <StickyListLayer position="bottom" size={stickyBottomSize} scrollOffset={currentScrollTop} scrollAxis="y">
+        <StickyListLayer
+          position="bottom"
+          size={stickyBottomSize}
+          scrollOffsetX={viewportRef.current?.scrollLeft ?? scrollPosition.left}
+          scrollOffsetY={currentScrollTop}
+        >
           {renderStickyBottom({ items: stickyBottomItems })}
         </StickyListLayer>
       )}

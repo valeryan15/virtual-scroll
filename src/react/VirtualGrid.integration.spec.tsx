@@ -255,8 +255,8 @@ describe('VirtualGrid integration', () => {
 
     const topWrapper = getByTestId('sticky-top-0').parentElement?.parentElement;
     const leftWrapper = getByTestId('sticky-left-0').parentElement?.parentElement;
-    expect(topWrapper?.style.transform).toBe('translateY(40px)');
-    expect(leftWrapper?.style.transform).toBe('translateX(30px)');
+    expect(topWrapper?.style.transform).toBe('translate(30px, 40px)');
+    expect(leftWrapper?.style.transform).toBe('translate(30px, 40px)');
   });
 
   it('skips dynamic scroll when allowEstimate is false', async () => {
