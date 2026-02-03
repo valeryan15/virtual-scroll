@@ -4,14 +4,16 @@ type StickyListLayerProps = {
   position: 'top' | 'bottom';
   size: number;
   scrollOffset: number;
+  scrollAxis: 'x' | 'y';
   children: ReactNode;
 };
 
-export function StickyListLayer({ position, size, scrollOffset, children }: StickyListLayerProps) {
+export function StickyListLayer({ position, size, scrollOffset, scrollAxis, children }: StickyListLayerProps) {
   if (size <= 0) {
     return null;
   }
 
+  const translate = scrollAxis === 'y' ? `translateY(${scrollOffset}px)` : `translateX(${scrollOffset}px)`;
   const style: CSSProperties = {
     position: 'absolute',
     left: 0,
@@ -20,7 +22,7 @@ export function StickyListLayer({ position, size, scrollOffset, children }: Stic
     height: size,
     pointerEvents: 'none',
     zIndex: 2,
-    transform: `translateX(${-scrollOffset}px)`,
+    transform: translate,
   };
 
   return (

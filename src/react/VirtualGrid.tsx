@@ -305,7 +305,8 @@ function VirtualGridInner(props: VirtualGridProps, ref: Ref<VirtualGridHandle>) 
           orientation="row"
           position="start"
           items={topRows}
-          scrollOffset={scrollPosition.left}
+          scrollOffset={scrollPosition.top}
+          scrollAxis="y"
           render={({ index }) => renderTopStickyRow({ rowIndex: index })}
         />
       )}
@@ -314,7 +315,8 @@ function VirtualGridInner(props: VirtualGridProps, ref: Ref<VirtualGridHandle>) 
           orientation="row"
           position="end"
           items={bottomRows}
-          scrollOffset={scrollPosition.left}
+          scrollOffset={scrollPosition.top}
+          scrollAxis="y"
           render={({ index }) => renderTopStickyRow({ rowIndex: index })}
         />
       )}
@@ -323,7 +325,8 @@ function VirtualGridInner(props: VirtualGridProps, ref: Ref<VirtualGridHandle>) 
           orientation="column"
           position="start"
           items={leftColumns}
-          scrollOffset={scrollPosition.top}
+          scrollOffset={scrollPosition.left}
+          scrollAxis="x"
           render={({ index }) => renderLeftStickyColumn({ columnIndex: index })}
         />
       )}
@@ -332,21 +335,50 @@ function VirtualGridInner(props: VirtualGridProps, ref: Ref<VirtualGridHandle>) 
           orientation="column"
           position="end"
           items={rightColumns}
-          scrollOffset={scrollPosition.top}
+          scrollOffset={scrollPosition.left}
+          scrollAxis="x"
           render={({ index }) => renderLeftStickyColumn({ columnIndex: index })}
         />
       )}
       {renderCorner && topCount > 0 && leftCount > 0 && (
-        <CornerLayer corner="tl" width={leftWidth} height={topHeight} render={renderCorner} />
+        <CornerLayer
+          corner="tl"
+          width={leftWidth}
+          height={topHeight}
+          scrollOffsetX={scrollPosition.left}
+          scrollOffsetY={scrollPosition.top}
+          render={renderCorner}
+        />
       )}
       {renderCorner && topCount > 0 && rightCount > 0 && (
-        <CornerLayer corner="tr" width={rightWidth} height={topHeight} render={renderCorner} />
+        <CornerLayer
+          corner="tr"
+          width={rightWidth}
+          height={topHeight}
+          scrollOffsetX={scrollPosition.left}
+          scrollOffsetY={scrollPosition.top}
+          render={renderCorner}
+        />
       )}
       {renderCorner && bottomCount > 0 && leftCount > 0 && (
-        <CornerLayer corner="bl" width={leftWidth} height={bottomHeight} render={renderCorner} />
+        <CornerLayer
+          corner="bl"
+          width={leftWidth}
+          height={bottomHeight}
+          scrollOffsetX={scrollPosition.left}
+          scrollOffsetY={scrollPosition.top}
+          render={renderCorner}
+        />
       )}
       {renderCorner && bottomCount > 0 && rightCount > 0 && (
-        <CornerLayer corner="br" width={rightWidth} height={bottomHeight} render={renderCorner} />
+        <CornerLayer
+          corner="br"
+          width={rightWidth}
+          height={bottomHeight}
+          scrollOffsetX={scrollPosition.left}
+          scrollOffsetY={scrollPosition.top}
+          render={renderCorner}
+        />
       )}
     </div>
   );

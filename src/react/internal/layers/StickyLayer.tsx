@@ -11,6 +11,7 @@ type StickyLayerProps = {
   position: 'start' | 'end';
   items: readonly StickyItem[];
   scrollOffset: number;
+  scrollAxis: 'x' | 'y';
   render: (args: { index: number }) => ReactNode;
 };
 
@@ -21,13 +22,13 @@ const baseLayerStyle: CSSProperties = {
   zIndex: 2,
 };
 
-export function StickyLayer({ orientation, position, items, scrollOffset, render }: StickyLayerProps) {
+export function StickyLayer({ orientation, position, items, scrollOffset, scrollAxis, render }: StickyLayerProps) {
   if (items.length === 0) {
     return null;
   }
 
   const isRow = orientation === 'row';
-  const translate = isRow ? `translateX(${-scrollOffset}px)` : `translateY(${-scrollOffset}px)`;
+  const translate = scrollAxis === 'y' ? `translateY(${scrollOffset}px)` : `translateX(${scrollOffset}px)`;
 
   return (
     <div data-virtual-layer="sticky" style={baseLayerStyle}>
