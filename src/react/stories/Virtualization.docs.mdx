@@ -70,6 +70,13 @@ The React layer should not re-implement core logic. Core stays DOM-free.
 - Dynamic measurement updates are batched with ResizeObserver + RAF.
 - Avoid heavy layout thrashing inside item render.
 
+## Known limitations
+- `estimatedItemSize` is required for dynamic mode; sizes are not auto-inferred.
+- Dynamic measurement relies on `ResizeObserver`; without it, estimated sizes remain.
+- Sticky rows/columns are rendered in separate layers and are not virtualized.
+- SSR fallback renders only the first N items/rows before hydration.
+- Masonry or free-layout virtualization is not supported.
+
 ### SSR fallback
 Use SSR fallback to render the first N items without DOM access:
 
