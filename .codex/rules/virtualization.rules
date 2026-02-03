@@ -195,7 +195,7 @@ prefix_rule(
 # Разрешить чтение/просмотр
 prefix_rule(
   pattern = ["bd"],
-  decision = "prompt",
+  decision = "allow",
 )
 
 # git worktree используется Beads-ом в sync-branch режиме
