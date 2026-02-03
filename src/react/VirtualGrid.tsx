@@ -136,6 +136,8 @@ function VirtualGridInner(props: VirtualGridProps, ref: Ref<VirtualGridHandle>) 
   });
 
   const scrollPosition = useScrollPosition(viewportRef);
+  const currentScrollTop = viewportRef.current?.scrollTop ?? scrollPosition.top;
+  const currentScrollLeft = viewportRef.current?.scrollLeft ?? scrollPosition.left;
   const onScrollRef = useRef(scroll?.onScroll);
   useEffect(() => {
     onScrollRef.current = scroll?.onScroll;
@@ -305,7 +307,7 @@ function VirtualGridInner(props: VirtualGridProps, ref: Ref<VirtualGridHandle>) 
           orientation="row"
           position="start"
           items={topRows}
-          scrollOffset={scrollPosition.top}
+          scrollOffset={currentScrollTop}
           scrollAxis="y"
           render={({ index }) => renderTopStickyRow({ rowIndex: index })}
         />
@@ -315,7 +317,7 @@ function VirtualGridInner(props: VirtualGridProps, ref: Ref<VirtualGridHandle>) 
           orientation="row"
           position="end"
           items={bottomRows}
-          scrollOffset={scrollPosition.top}
+          scrollOffset={currentScrollTop}
           scrollAxis="y"
           render={({ index }) => renderTopStickyRow({ rowIndex: index })}
         />
@@ -325,7 +327,7 @@ function VirtualGridInner(props: VirtualGridProps, ref: Ref<VirtualGridHandle>) 
           orientation="column"
           position="start"
           items={leftColumns}
-          scrollOffset={scrollPosition.left}
+          scrollOffset={currentScrollLeft}
           scrollAxis="x"
           render={({ index }) => renderLeftStickyColumn({ columnIndex: index })}
         />
@@ -335,7 +337,7 @@ function VirtualGridInner(props: VirtualGridProps, ref: Ref<VirtualGridHandle>) 
           orientation="column"
           position="end"
           items={rightColumns}
-          scrollOffset={scrollPosition.left}
+          scrollOffset={currentScrollLeft}
           scrollAxis="x"
           render={({ index }) => renderLeftStickyColumn({ columnIndex: index })}
         />
@@ -345,8 +347,8 @@ function VirtualGridInner(props: VirtualGridProps, ref: Ref<VirtualGridHandle>) 
           corner="tl"
           width={leftWidth}
           height={topHeight}
-          scrollOffsetX={scrollPosition.left}
-          scrollOffsetY={scrollPosition.top}
+          scrollOffsetX={currentScrollLeft}
+          scrollOffsetY={currentScrollTop}
           render={renderCorner}
         />
       )}
@@ -355,8 +357,8 @@ function VirtualGridInner(props: VirtualGridProps, ref: Ref<VirtualGridHandle>) 
           corner="tr"
           width={rightWidth}
           height={topHeight}
-          scrollOffsetX={scrollPosition.left}
-          scrollOffsetY={scrollPosition.top}
+          scrollOffsetX={currentScrollLeft}
+          scrollOffsetY={currentScrollTop}
           render={renderCorner}
         />
       )}
@@ -365,8 +367,8 @@ function VirtualGridInner(props: VirtualGridProps, ref: Ref<VirtualGridHandle>) 
           corner="bl"
           width={leftWidth}
           height={bottomHeight}
-          scrollOffsetX={scrollPosition.left}
-          scrollOffsetY={scrollPosition.top}
+          scrollOffsetX={currentScrollLeft}
+          scrollOffsetY={currentScrollTop}
           render={renderCorner}
         />
       )}
@@ -375,8 +377,8 @@ function VirtualGridInner(props: VirtualGridProps, ref: Ref<VirtualGridHandle>) 
           corner="br"
           width={rightWidth}
           height={bottomHeight}
-          scrollOffsetX={scrollPosition.left}
-          scrollOffsetY={scrollPosition.top}
+          scrollOffsetX={currentScrollLeft}
+          scrollOffsetY={currentScrollTop}
           render={renderCorner}
         />
       )}

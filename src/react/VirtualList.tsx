@@ -81,6 +81,7 @@ function VirtualListInner<T>(props: VirtualListProps<T>, ref: Ref<VirtualListHan
   });
 
   const scrollPosition = useScrollPosition(viewportRef);
+  const currentScrollTop = viewportRef.current?.scrollTop ?? scrollPosition.top;
   const onScrollRef = useRef(scroll?.onScroll);
   useEffect(() => {
     onScrollRef.current = scroll?.onScroll;
@@ -189,12 +190,12 @@ function VirtualListInner<T>(props: VirtualListProps<T>, ref: Ref<VirtualListHan
         })}
       </VirtualBodyLayer>
       {renderStickyTop && stickyTopItems.length > 0 && (
-        <StickyListLayer position="top" size={stickyTopSize} scrollOffset={scrollPosition.top} scrollAxis="y">
+        <StickyListLayer position="top" size={stickyTopSize} scrollOffset={currentScrollTop} scrollAxis="y">
           {renderStickyTop({ items: stickyTopItems })}
         </StickyListLayer>
       )}
       {renderStickyBottom && stickyBottomItems.length > 0 && (
-        <StickyListLayer position="bottom" size={stickyBottomSize} scrollOffset={scrollPosition.top} scrollAxis="y">
+        <StickyListLayer position="bottom" size={stickyBottomSize} scrollOffset={currentScrollTop} scrollAxis="y">
           {renderStickyBottom({ items: stickyBottomItems })}
         </StickyListLayer>
       )}
