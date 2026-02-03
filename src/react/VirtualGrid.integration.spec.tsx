@@ -170,6 +170,49 @@ describe('VirtualGrid integration', () => {
     expect(queryByTestId('cell-4-4')).toBeTruthy();
   });
 
+  it('does not loop when controlled scroll updates state', async () => {
+    const ControlledGrid = () => {
+      const [position, setPosition] = React.useState({ top: 0, left: 0 });
+
+      return (
+        <VirtualGrid
+          rowCount={20}
+          columnCount={20}
+          rows={{ sizeMode: 'fixed', itemSize: 20 }}
+          columns={{ sizeMode: 'fixed', itemSize: 30 }}
+          overscan={0}
+          renderCell={({ rowIndex, columnIndex }) => (
+            <div data-testid={`cell-${rowIndex}-${columnIndex}`} />
+          )}
+          scroll={{
+            position,
+            onScroll: (next) => setPosition(next),
+          }}
+        />
+      );
+    };
+
+    const { container } = render(<ControlledGrid />);
+    const viewport = container.firstElementChild as HTMLElement;
+    setupViewport(viewport);
+    setClientSize(viewport, { width: 90, height: 60 });
+    await flushEffects();
+
+    act(() => {
+      triggerResize(viewport, { width: 90, height: 60 });
+    });
+
+    await act(async () => {
+      viewport.scrollTop = 40;
+      viewport.scrollLeft = 60;
+      viewport.dispatchEvent(new Event('scroll'));
+      await Promise.resolve();
+    });
+
+    expect(viewport.scrollTop).toBe(40);
+    expect(viewport.scrollLeft).toBe(60);
+  });
+
   it('syncs sticky layers with scroll offsets', async () => {
     const baseProps = {
       rowCount: 4,

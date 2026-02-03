@@ -125,6 +125,44 @@ describe('VirtualList integration', () => {
     expect(queryByTestId('item-5')).toBeTruthy();
   });
 
+  it('does not loop when controlled scroll updates state', async () => {
+    const ControlledList = () => {
+      const [position, setPosition] = React.useState({ top: 0, left: 0 });
+
+      return (
+        <VirtualList
+          items={Array.from({ length: 20 }, (_, index) => ({ id: index }))}
+          itemKey={(item) => item.id}
+          renderItem={({ item }) => <div data-testid={`item-${item.id}`} />}
+          layout={{ sizeMode: 'fixed', itemSize: 20 }}
+          overscan={0}
+          scroll={{
+            position,
+            onScroll: (next) => setPosition(next),
+          }}
+        />
+      );
+    };
+
+    const { container } = render(<ControlledList />);
+    const viewport = container.firstElementChild as HTMLElement;
+    setupViewport(viewport);
+    setClientSize(viewport, { width: 200, height: 60 });
+    await flushEffects();
+
+    act(() => {
+      triggerResize(viewport, { width: 200, height: 60 });
+    });
+
+    await act(async () => {
+      viewport.scrollTop = 40;
+      viewport.dispatchEvent(new Event('scroll'));
+      await Promise.resolve();
+    });
+
+    expect(viewport.scrollTop).toBe(40);
+  });
+
   it('renders sticky top and bottom slices', async () => {
     const items = ['Alpha', 'Beta', 'Gamma'];
     const { container, getByTestId } = render(

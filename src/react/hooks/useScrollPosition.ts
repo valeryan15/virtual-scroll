@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type { RefObject } from 'react';
 
 export type ScrollPosition = {
@@ -8,11 +8,16 @@ export type ScrollPosition = {
 
 export function useScrollPosition(viewportRef: RefObject<HTMLElement | null>): ScrollPosition {
   const [position, setPosition] = useState<ScrollPosition>({ top: 0, left: 0 });
+  const latestPositionRef = useRef<ScrollPosition>(position);
   const frameRef = useRef<number | null>(null);
-  const useIsomorphicLayoutEffect =
-    typeof window === 'undefined' || typeof window.requestAnimationFrame === 'undefined'
-      ? useEffect
-      : useLayoutEffect;
+  const setPositionIfChanged = useCallback((next: ScrollPosition) => {
+    const current = latestPositionRef.current;
+    if (current.top === next.top && current.left === next.left) {
+      return;
+    }
+    latestPositionRef.current = next;
+    setPosition(next);
+  }, []);
 
   useEffect(() => {
     const element = viewportRef.current;
@@ -22,7 +27,7 @@ export function useScrollPosition(viewportRef: RefObject<HTMLElement | null>): S
 
     const update = () => {
       frameRef.current = null;
-      setPosition({
+      setPositionIfChanged({
         top: element.scrollTop,
         left: element.scrollLeft,
       });
@@ -35,7 +40,7 @@ export function useScrollPosition(viewportRef: RefObject<HTMLElement | null>): S
       frameRef.current = requestAnimationFrame(update);
     };
 
-    onScroll();
+    update();
     element.addEventListener('scroll', onScroll, { passive: true });
 
     return () => {
@@ -44,21 +49,7 @@ export function useScrollPosition(viewportRef: RefObject<HTMLElement | null>): S
       }
       element.removeEventListener('scroll', onScroll);
     };
-  }, [viewportRef]);
-
-  useIsomorphicLayoutEffect(() => {
-    const element = viewportRef.current;
-    if (!element) {
-      return;
-    }
-
-    if (element.scrollTop !== position.top || element.scrollLeft !== position.left) {
-      setPosition({
-        top: element.scrollTop,
-        left: element.scrollLeft,
-      });
-    }
-  });
+  }, [setPositionIfChanged, viewportRef]);
 
   return position;
 }
