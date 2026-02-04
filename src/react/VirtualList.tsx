@@ -43,12 +43,17 @@ function VirtualListInner<T>(props: VirtualListProps<T>, ref: Ref<VirtualListHan
 
   const renderStickyTop = isVertical ? sticky?.renderStickyTop : undefined;
   const renderStickyBottom = isVertical ? sticky?.renderStickyBottom : undefined;
+  // Sticky-срезы задаются количеством элементов от начала/конца массива.
+  // Ограничиваем значения общей длиной, чтобы избежать пересечений и отрицательных диапазонов.
   const maxTopCount = Math.min(sticky?.top ?? 0, items.length);
   const topCount = renderStickyTop ? maxTopCount : 0;
   const maxBottomCount = Math.min(sticky?.bottom ?? 0, items.length - topCount);
   const bottomCount = renderStickyBottom ? maxBottomCount : 0;
   const bodyCount = Math.max(0, items.length - topCount - bottomCount);
+  // SSR-количество включает sticky-элементы в начале, поэтому уменьшаем на topCount для body.
   const ssrBodyCount = Math.max(0, Math.min(bodyCount, (ssr?.count ?? 0) - topCount));
+  // Размеры sticky считаем по фиксированному размеру (или estimated в dynamic),
+  // так как sticky-элементы не участвуют в измерениях виртуализированного body.
   const itemExtent = sizeMode === 'fixed' ? itemSize ?? 0 : estimatedItemSize ?? 0;
   const stickyTopSize = isVertical ? topCount * itemExtent : 0;
   const stickyBottomSize = isVertical ? bottomCount * itemExtent : 0;
@@ -149,6 +154,7 @@ function VirtualListInner<T>(props: VirtualListProps<T>, ref: Ref<VirtualListHan
       position: 'relative',
       height: totalSize,
       width: '100%',
+      // Резервируем место под верхние sticky-элементы, чтобы body начинался ниже.
       paddingTop: stickyTopSize,
       paddingBottom: 0,
       boxSizing: 'border-box',

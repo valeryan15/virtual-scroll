@@ -76,6 +76,7 @@ function VirtualGridInner(props: VirtualGridProps, ref: Ref<VirtualGridHandle>) 
   const renderLeftStickyColumn = sticky?.renderLeftStickyColumn;
   const renderCorner = sticky?.renderCorner;
 
+  // Sticky-количества ограничиваем доступными строками/колонками, чтобы избежать пересечений.
   const topCount = renderTopStickyRow ? Math.min(sticky?.top ?? 0, rowCount) : 0;
   const bottomCount = renderTopStickyRow ? Math.min(sticky?.bottom ?? 0, rowCount - topCount) : 0;
   const leftCount = renderLeftStickyColumn ? Math.min(sticky?.left ?? 0, columnCount) : 0;
@@ -90,6 +91,7 @@ function VirtualGridInner(props: VirtualGridProps, ref: Ref<VirtualGridHandle>) 
   const rowSize = useCallback((index: number) => getAxisItemSize(rows, index), [rows]);
   const columnSize = useCallback((index: number) => getAxisItemSize(columns, index), [columns]);
 
+  // Sticky-offsets считаем от начала/конца, суммируя фиксированные/оценочные размеры.
   const topRows = useMemo(() => buildStickyOffsets(0, topCount, rowSize), [rowSize, topCount]);
   const bottomRows = useMemo(
     () => buildStickyOffsets(rowCount - bottomCount, bottomCount, rowSize),
@@ -101,6 +103,7 @@ function VirtualGridInner(props: VirtualGridProps, ref: Ref<VirtualGridHandle>) 
     [columnCount, columnSize, rightCount],
   );
 
+  // Sticky-экстенты (px) используются для смещения виртуализированного body viewport.
   const topHeight = sumAxisSizes(0, topCount, rowSize);
   const bottomHeight = sumAxisSizes(rowCount - bottomCount, bottomCount, rowSize);
   const leftWidth = sumAxisSizes(0, leftCount, columnSize);
@@ -254,13 +257,14 @@ function VirtualGridInner(props: VirtualGridProps, ref: Ref<VirtualGridHandle>) 
       position: 'relative',
       width: totalWidth + leftWidth + rightWidth,
       height: totalHeight + topHeight + bottomHeight,
+      // Резервируем место под верхние/левые sticky-регионы, чтобы body начинался после них.
       paddingTop: topHeight,
-      paddingBottom: 0,
+      paddingBottom: bottomHeight,
       paddingLeft: leftWidth,
-      paddingRight: 0,
+      paddingRight: rightWidth,
       boxSizing: 'border-box',
     }),
-    [leftWidth, topHeight, totalHeight, totalWidth],
+    [bottomHeight, leftWidth, rightWidth, topHeight, totalHeight, totalWidth],
   );
 
   const shouldMeasureRow = (columnIndex: number) => columnIndex === range.columns.start;
