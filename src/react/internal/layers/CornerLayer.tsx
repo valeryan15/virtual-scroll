@@ -6,6 +6,8 @@ type CornerLayerProps = {
   corner: Corner;
   width: number;
   height: number;
+  scrollOffsetX?: number;
+  scrollOffsetY?: number;
   render: (args: { corner: Corner }) => ReactNode;
 };
 
@@ -15,7 +17,7 @@ const baseCornerStyle: CSSProperties = {
   zIndex: 3,
 };
 
-export function CornerLayer({ corner, width, height, render }: CornerLayerProps) {
+export function CornerLayer({ corner, width, height, scrollOffsetX, scrollOffsetY, render }: CornerLayerProps) {
   if (width <= 0 || height <= 0) {
     return null;
   }
@@ -28,6 +30,7 @@ export function CornerLayer({ corner, width, height, render }: CornerLayerProps)
     bottom: corner.startsWith('b') ? 0 : undefined,
     left: corner.endsWith('l') ? 0 : undefined,
     right: corner.endsWith('r') ? 0 : undefined,
+    transform: `translate(${scrollOffsetX ?? 0}px, ${scrollOffsetY ?? 0}px)`,
   };
 
   return (

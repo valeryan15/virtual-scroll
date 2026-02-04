@@ -43,12 +43,17 @@ function VirtualListInner<T>(props: VirtualListProps<T>, ref: Ref<VirtualListHan
 
   const renderStickyTop = isVertical ? sticky?.renderStickyTop : undefined;
   const renderStickyBottom = isVertical ? sticky?.renderStickyBottom : undefined;
+  // Sticky-срезы задаются количеством элементов от начала/конца массива.
+  // Ограничиваем значения общей длиной, чтобы избежать пересечений и отрицательных диапазонов.
   const maxTopCount = Math.min(sticky?.top ?? 0, items.length);
   const topCount = renderStickyTop ? maxTopCount : 0;
   const maxBottomCount = Math.min(sticky?.bottom ?? 0, items.length - topCount);
   const bottomCount = renderStickyBottom ? maxBottomCount : 0;
   const bodyCount = Math.max(0, items.length - topCount - bottomCount);
+  // SSR-количество включает sticky-элементы в начале, поэтому уменьшаем на topCount для body.
   const ssrBodyCount = Math.max(0, Math.min(bodyCount, (ssr?.count ?? 0) - topCount));
+  // Размеры sticky считаем по фиксированному размеру (или estimated в dynamic),
+  // так как sticky-элементы не участвуют в измерениях виртуализированного body.
   const itemExtent = sizeMode === 'fixed' ? itemSize ?? 0 : estimatedItemSize ?? 0;
   const stickyTopSize = isVertical ? topCount * itemExtent : 0;
   const stickyBottomSize = isVertical ? bottomCount * itemExtent : 0;
@@ -81,6 +86,7 @@ function VirtualListInner<T>(props: VirtualListProps<T>, ref: Ref<VirtualListHan
   });
 
   const scrollPosition = useScrollPosition(viewportRef);
+  const currentScrollTop = viewportRef.current?.scrollTop ?? scrollPosition.top;
   const onScrollRef = useRef(scroll?.onScroll);
   useEffect(() => {
     onScrollRef.current = scroll?.onScroll;
@@ -148,11 +154,12 @@ function VirtualListInner<T>(props: VirtualListProps<T>, ref: Ref<VirtualListHan
       position: 'relative',
       height: totalSize,
       width: '100%',
+      // Резервируем место под верхние sticky-элементы, чтобы body начинался ниже.
       paddingTop: stickyTopSize,
-      paddingBottom: stickyBottomSize,
+      paddingBottom: 0,
       boxSizing: 'border-box',
     };
-  }, [direction, stickyBottomSize, stickyTopSize, totalSize]);
+  }, [direction, stickyTopSize, totalSize]);
 
   const stickyTopItems = getStickySlice(items, topCount, false);
   const stickyBottomItems = getStickySlice(items, bottomCount, true);
@@ -189,12 +196,22 @@ function VirtualListInner<T>(props: VirtualListProps<T>, ref: Ref<VirtualListHan
         })}
       </VirtualBodyLayer>
       {renderStickyTop && stickyTopItems.length > 0 && (
-        <StickyListLayer position="top" size={stickyTopSize} scrollOffset={scrollPosition.left}>
+        <StickyListLayer
+          position="top"
+          size={stickyTopSize}
+          scrollOffsetX={viewportRef.current?.scrollLeft ?? scrollPosition.left}
+          scrollOffsetY={currentScrollTop}
+        >
           {renderStickyTop({ items: stickyTopItems })}
         </StickyListLayer>
       )}
       {renderStickyBottom && stickyBottomItems.length > 0 && (
-        <StickyListLayer position="bottom" size={stickyBottomSize} scrollOffset={scrollPosition.left}>
+        <StickyListLayer
+          position="bottom"
+          size={stickyBottomSize}
+          scrollOffsetX={viewportRef.current?.scrollLeft ?? scrollPosition.left}
+          scrollOffsetY={currentScrollTop}
+        >
           {renderStickyBottom({ items: stickyBottomItems })}
         </StickyListLayer>
       )}
