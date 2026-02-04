@@ -150,10 +150,10 @@ function VirtualListInner<T>(props: VirtualListProps<T>, ref: Ref<VirtualListHan
       height: totalSize,
       width: '100%',
       paddingTop: stickyTopSize,
-      paddingBottom: stickyBottomSize,
+      paddingBottom: 0,
       boxSizing: 'border-box',
     };
-  }, [direction, stickyBottomSize, stickyTopSize, totalSize]);
+  }, [direction, stickyTopSize, totalSize]);
 
   const stickyTopItems = getStickySlice(items, topCount, false);
   const stickyBottomItems = getStickySlice(items, bottomCount, true);

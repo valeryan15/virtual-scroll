@@ -255,12 +255,12 @@ function VirtualGridInner(props: VirtualGridProps, ref: Ref<VirtualGridHandle>) 
       width: totalWidth + leftWidth + rightWidth,
       height: totalHeight + topHeight + bottomHeight,
       paddingTop: topHeight,
-      paddingBottom: bottomHeight,
+      paddingBottom: 0,
       paddingLeft: leftWidth,
-      paddingRight: rightWidth,
+      paddingRight: 0,
       boxSizing: 'border-box',
     }),
-    [bottomHeight, leftWidth, rightWidth, topHeight, totalHeight, totalWidth],
+    [leftWidth, topHeight, totalHeight, totalWidth],
   );
 
   const shouldMeasureRow = (columnIndex: number) => columnIndex === range.columns.start;
