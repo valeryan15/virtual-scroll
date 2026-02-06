@@ -3,7 +3,7 @@ import React, { useMemo, useState } from 'react';
 import { VirtualList } from '../VirtualList';
 import type { VirtualListProps } from '../types';
 import type { ListItem } from './storyData';
-import { createListItems, getListItemHeight } from './storyData';
+import { createListItems, getListItemHeight, resolveStoryLocale, storyText, type StoryLocale } from './storyData';
 
 const viewportStyle: React.CSSProperties = {
   height: 360,
@@ -25,7 +25,7 @@ const itemStyle: React.CSSProperties = {
 };
 
 const meta: Meta<React.ComponentType<VirtualListProps<ListItem>>> = {
-  title: 'Components/VirtualList',
+  title: 'Компоненты/VirtualList',
   component: VirtualList as React.ComponentType<VirtualListProps<ListItem>>,
   tags: ['autodocs'],
   args: {
@@ -38,8 +38,11 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 type StoryListProps = VirtualListProps<ListItem>;
 
-const BaseList = (props: Omit<VirtualListProps<{ id: number; label: string }>, 'items' | 'itemKey'>) => {
-  const items = useMemo(() => createListItems(200), []);
+const BaseList = ({
+  locale,
+  ...props
+}: Omit<VirtualListProps<{ id: number; label: string }>, 'items' | 'itemKey'> & { locale: StoryLocale }) => {
+  const items = useMemo(() => createListItems(200, locale), [locale]);
 
   return (
     <VirtualList
@@ -57,57 +60,70 @@ const BaseList = (props: Omit<VirtualListProps<{ id: number; label: string }>, '
 };
 
 export const BasicFixed: Story = {
-  render: (args: StoryListProps) => (
+  name: 'Базовый фиксированный размер',
+  render: (args: StoryListProps, context) => (
     <BaseList
       {...args}
+      locale={resolveStoryLocale(context.globals.locale)}
       layout={{ sizeMode: 'fixed', itemSize: 36, direction: 'vertical' }}
     />
   ),
 };
 
 export const DynamicMeasured: Story = {
-  render: (args: StoryListProps) => (
+  name: 'Динамический размер',
+  render: (args: StoryListProps, context) => (
     <BaseList
       {...args}
+      locale={resolveStoryLocale(context.globals.locale)}
       layout={{ sizeMode: 'dynamic', estimatedItemSize: 36, direction: 'vertical' }}
     />
   ),
 };
 
 export const StickyHeaderFooter: Story = {
-  render: (args: StoryListProps) => (
+  name: 'Закрепленные верх и низ',
+  render: (args: StoryListProps, context) => {
+    const locale = resolveStoryLocale(context.globals.locale);
+
+    return (
     <BaseList
       {...args}
+      locale={locale}
       layout={{ sizeMode: 'fixed', itemSize: 36, direction: 'vertical' }}
       sticky={{
         top: 1,
         bottom: 1,
         renderStickyTop: ({ items }) => (
           <div style={{ ...itemStyle, height: 36, background: '#fff7e6', fontWeight: 600 }}>
-            {items[0]?.label} (sticky)
+            {items[0]?.label} ({storyText.sticky(locale)})
           </div>
         ),
         renderStickyBottom: ({ items }) => (
           <div style={{ ...itemStyle, height: 36, background: '#f6ffed', fontWeight: 600 }}>
-            {items[0]?.label} (sticky)
+            {items[0]?.label} ({storyText.sticky(locale)})
           </div>
         ),
       }}
     />
-  ),
+    );
+  },
 };
 
 export const ControlledScroll: Story = {
-  render: (args: StoryListProps) => {
+  name: 'Контролируемая прокрутка',
+  render: (args: StoryListProps, context) => {
     const [position, setPosition] = useState({ top: 0, left: 0 });
+    const locale = resolveStoryLocale(context.globals.locale);
 
     return (
       <div>
         <div style={{ marginBottom: 8, fontSize: 12, color: '#555' }}>
-          ScrollTop: {Math.round(position.top)}
+          {storyText.scrollTop(locale)}: {Math.round(position.top)}
         </div>
         <BaseList
           {...args}
+          locale={locale}
           layout={{ sizeMode: 'fixed', itemSize: 36, direction: 'vertical' }}
           scroll={{
             position,
@@ -120,9 +136,11 @@ export const ControlledScroll: Story = {
 };
 
 export const SsrFallback: Story = {
-  render: (args: StoryListProps) => (
+  name: 'SSR fallback',
+  render: (args: StoryListProps, context) => (
     <BaseList
       {...args}
+      locale={resolveStoryLocale(context.globals.locale)}
       layout={{ sizeMode: 'fixed', itemSize: 36, direction: 'vertical' }}
       ssr={{ count: 6 }}
     />
@@ -130,7 +148,7 @@ export const SsrFallback: Story = {
   parameters: {
     docs: {
       description: {
-        story: 'Set ssr.count to render the first N items on the server before hydration.',
+        story: storyText.ssrDescription('ru'),
       },
     },
   },
