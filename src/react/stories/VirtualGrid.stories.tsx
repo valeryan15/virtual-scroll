@@ -1,8 +1,8 @@
 import type { Meta, StoryObj } from '@storybook/react';
-import React, { useMemo, useState } from 'react';
+import React, { useState } from 'react';
 import { VirtualGrid } from '../VirtualGrid';
 import type { AxisConfig } from '../../shared/types';
-import { formatCellLabel, getColumnWidth, getRowHeight } from './storyData';
+import { formatCellLabel, getColumnWidth, getRowHeight, resolveStoryLocale, storyText, type StoryLocale } from './storyData';
 
 const viewportStyle: React.CSSProperties = {
   height: 360,
@@ -26,7 +26,7 @@ const cellStyle: React.CSSProperties = {
 };
 
 const meta: Meta<typeof VirtualGrid> = {
-  title: 'Components/VirtualGrid',
+  title: 'Компоненты/VirtualGrid',
   component: VirtualGrid,
   tags: ['autodocs'],
   args: {
@@ -43,11 +43,13 @@ const BaseGrid = ({
   columns,
   rowCount,
   columnCount,
+  locale,
 }: {
   rows: AxisConfig;
   columns: AxisConfig;
   rowCount: number;
   columnCount: number;
+  locale: StoryLocale;
 }) => {
   return (
     <VirtualGrid
@@ -63,7 +65,7 @@ const BaseGrid = ({
             width: columns.sizeMode === 'dynamic' ? getColumnWidth(columnIndex) : undefined,
           }}
         >
-          {formatCellLabel(rowIndex, columnIndex)}
+          {formatCellLabel(rowIndex, columnIndex, locale)}
         </div>
       )}
       style={viewportStyle}
@@ -72,29 +74,37 @@ const BaseGrid = ({
 };
 
 export const BasicFixedGrid: Story = {
-  render: () => (
+  name: 'Базовая фиксированная сетка',
+  render: (_args, context) => (
     <BaseGrid
       rowCount={200}
       columnCount={40}
       rows={{ sizeMode: 'fixed', itemSize: 36 }}
       columns={{ sizeMode: 'fixed', itemSize: 120 }}
+      locale={resolveStoryLocale(context.globals.locale)}
     />
   ),
 };
 
 export const DynamicRows: Story = {
-  render: () => (
+  name: 'Динамические строки',
+  render: (_args, context) => (
     <BaseGrid
       rowCount={120}
       columnCount={20}
       rows={{ sizeMode: 'dynamic', estimatedItemSize: 40 }}
       columns={{ sizeMode: 'fixed', itemSize: 120 }}
+      locale={resolveStoryLocale(context.globals.locale)}
     />
   ),
 };
 
 export const StickyRowsColumns: Story = {
-  render: () => (
+  name: 'Закрепленные строки и колонки',
+  render: (_args, context) => {
+    const locale = resolveStoryLocale(context.globals.locale);
+
+    return (
     <VirtualGrid
       rowCount={100}
       columnCount={20}
@@ -104,29 +114,36 @@ export const StickyRowsColumns: Story = {
         top: 1,
         left: 1,
         renderTopStickyRow: ({ rowIndex }) => (
-          <div style={{ ...cellStyle, height: 36, background: '#fff7e6', fontWeight: 600 }}>Header {rowIndex + 1}</div>
+          <div style={{ ...cellStyle, height: 36, background: '#fff7e6', fontWeight: 600 }}>
+            {storyText.header(locale, rowIndex + 1)}
+          </div>
         ),
         renderLeftStickyColumn: ({ columnIndex }) => (
-          <div style={{ ...cellStyle, width: 120, background: '#f6ffed', fontWeight: 600 }}>Col {columnIndex + 1}</div>
+          <div style={{ ...cellStyle, width: 120, background: '#f6ffed', fontWeight: 600 }}>
+            {storyText.column(locale, columnIndex + 1)}
+          </div>
         ),
         renderCorner: ({ corner }) => (
           <div style={{ ...cellStyle, background: '#e6f7ff', fontWeight: 700 }}>{corner.toUpperCase()}</div>
         ),
       }}
-      renderCell={({ rowIndex, columnIndex }) => <div style={cellStyle}>{formatCellLabel(rowIndex, columnIndex)}</div>}
+      renderCell={({ rowIndex, columnIndex }) => <div style={cellStyle}>{formatCellLabel(rowIndex, columnIndex, locale)}</div>}
       style={viewportStyle}
     />
-  ),
+    );
+  },
 };
 
 export const ControlledScrollGrid: Story = {
-  render: () => {
+  name: 'Контролируемая прокрутка',
+  render: (_args, context) => {
     const [position, setPosition] = useState({ top: 0, left: 0 });
+    const locale = resolveStoryLocale(context.globals.locale);
 
     return (
       <div>
         <div style={{ marginBottom: 8, fontSize: 12, color: '#555' }}>
-          Scroll: {Math.round(position.top)} / {Math.round(position.left)}
+          {storyText.scroll(locale)}: {Math.round(position.top)} / {Math.round(position.left)}
         </div>
         <VirtualGrid
           rowCount={80}
@@ -134,7 +151,7 @@ export const ControlledScrollGrid: Story = {
           rows={{ sizeMode: 'fixed', itemSize: 36 }}
           columns={{ sizeMode: 'fixed', itemSize: 120 }}
           renderCell={({ rowIndex, columnIndex }) => (
-            <div style={cellStyle}>{formatCellLabel(rowIndex, columnIndex)}</div>
+            <div style={cellStyle}>{formatCellLabel(rowIndex, columnIndex, locale)}</div>
           )}
           scroll={{
             position,

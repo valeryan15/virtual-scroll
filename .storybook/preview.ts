@@ -1,7 +1,24 @@
 import type { Preview } from '@storybook/react-vite';
 
 const preview: Preview = {
+  globalTypes: {
+    locale: {
+      name: 'Язык',
+      description: 'Язык интерфейса сторис',
+      defaultValue: 'ru',
+      toolbar: {
+        icon: 'globe',
+        items: [
+          { value: 'ru', title: 'Русский' },
+          { value: 'en', title: 'English' },
+        ],
+      },
+    },
+  },
   parameters: {
+    docs: {
+      defaultName: 'Документация',
+    },
     controls: {
       matchers: {
         color: /(background|color)$/i,
