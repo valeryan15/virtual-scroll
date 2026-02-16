@@ -8,11 +8,12 @@ import * as VirtualGridStories from './VirtualGrid.stories';
 <Subtitle>React adapter over core virtualization algorithms</Subtitle>
 
 <Description>
-This documentation page provides usage guidance, behavioral notes, and trade-offs for the
-VirtualList and VirtualGrid components.
+  This documentation page provides usage guidance, behavioral notes, and trade-offs for the VirtualList and VirtualGrid
+  components.
 </Description>
 
 ## Architecture overview
+
 - **core/** contains pure math and range calculations.
 - **react/** adapts core to DOM and React.
 - **shared/** defines public contracts.
@@ -54,7 +55,10 @@ The React layer should not re-implement core logic. Core stays DOM-free.
   rows={{ sizeMode: 'fixed', itemSize: 36 }}
   columns={{ sizeMode: 'fixed', itemSize: 120 }}
   renderCell={({ rowIndex, columnIndex }) => (
-    <Cell rowIndex={rowIndex} columnIndex={columnIndex} />
+    <Cell
+      rowIndex={rowIndex}
+      columnIndex={columnIndex}
+    />
   )}
 />
 ```
@@ -62,15 +66,18 @@ The React layer should not re-implement core logic. Core stays DOM-free.
 ## Behavior notes
 
 ### Scroll anchoring (ADR-003)
+
 - Anchoring is always enabled in dynamic mode.
 - Prepend operations should not cause scroll jumps.
 
 ### Dynamic sizes (ADR-005)
+
 - `estimatedItemSize` is required.
-- Dynamic measurement updates are batched with ResizeObserver + RAF.
+- Dynamic measurement updates are batched via ResizeObserver + RAF.
 - Avoid heavy layout thrashing inside item render.
 
 ## Known limitations
+
 - `estimatedItemSize` is required for dynamic mode; sizes are not auto-inferred.
 - Dynamic measurement relies on `ResizeObserver`; without it, estimated sizes remain.
 - Sticky rows/columns are rendered in separate layers and are not virtualized.
@@ -78,6 +85,7 @@ The React layer should not re-implement core logic. Core stays DOM-free.
 - Masonry or free-layout virtualization is not supported.
 
 ### SSR fallback
+
 Use SSR fallback to render the first N items without DOM access:
 
 ```tsx
@@ -99,7 +107,10 @@ For grids:
   rows={{ sizeMode: 'fixed', itemSize: 36 }}
   columns={{ sizeMode: 'fixed', itemSize: 120 }}
   renderCell={({ rowIndex, columnIndex }) => (
-    <Cell rowIndex={rowIndex} columnIndex={columnIndex} />
+    <Cell
+      rowIndex={rowIndex}
+      columnIndex={columnIndex}
+    />
   )}
   ssr={{ rows: 2, columns: 3 }}
 />

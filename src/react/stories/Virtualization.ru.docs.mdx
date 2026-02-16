@@ -1,0 +1,125 @@
+import { Meta, Title, Subtitle, Description, Primary, Controls, Stories } from '@storybook/addon-docs/blocks';
+import * as VirtualListStories from './VirtualList.stories';
+import * as VirtualGridStories from './VirtualGrid.stories';
+
+<Meta
+  of={VirtualListStories}
+  name='Virtualization (RU)'
+/>
+
+<Title>Библиотека виртуализации</Title>
+<Subtitle>React-адаптер над core-алгоритмами виртуализации</Subtitle>
+
+<Description>
+  Эта страница документации описывает использование, особенности поведения и архитектурные компромиссы компонентов
+  VirtualList и VirtualGrid.
+</Description>
+
+## Обзор архитектуры
+
+- **core/** содержит чистую математику и расчеты диапазонов.
+- **react/** адаптирует core к DOM и React.
+- **shared/** определяет публичные контракты.
+
+React-слой не должен переопределять логику core. Core остается без зависимостей от DOM.
+
+## Базовое использование
+
+### VirtualList (fixed)
+
+```tsx
+<VirtualList
+  items={items}
+  itemKey={(item) => item.id}
+  renderItem={({ item }) => <Row item={item} />}
+  layout={{ sizeMode: 'fixed', itemSize: 36 }}
+  overscan={2}
+/>
+```
+
+### VirtualList (dynamic)
+
+```tsx
+<VirtualList
+  items={items}
+  itemKey={(item) => item.id}
+  renderItem={({ item }) => <DynamicRow item={item} />}
+  layout={{ sizeMode: 'dynamic', estimatedItemSize: 36 }}
+  overscan={2}
+/>
+```
+
+### VirtualGrid (fixed)
+
+```tsx
+<VirtualGrid
+  rowCount={200}
+  columnCount={40}
+  rows={{ sizeMode: 'fixed', itemSize: 36 }}
+  columns={{ sizeMode: 'fixed', itemSize: 120 }}
+  renderCell={({ rowIndex, columnIndex }) => (
+    <Cell
+      rowIndex={rowIndex}
+      columnIndex={columnIndex}
+    />
+  )}
+/>
+```
+
+## Особенности поведения
+
+### Scroll anchoring (ADR-003)
+
+- В dynamic-режиме anchoring всегда включен.
+- Операции prepend не должны вызывать скачки скролла.
+
+### Dynamic размеры (ADR-005)
+
+- `estimatedItemSize` обязателен.
+- Обновления динамических измерений батчатся через ResizeObserver + RAF.
+- Избегайте тяжелого layout thrashing внутри рендера элемента.
+
+## Известные ограничения
+
+- `estimatedItemSize` обязателен для dynamic-режима; размеры не определяются автоматически.
+- Динамические измерения зависят от `ResizeObserver`; без него остаются оценочные размеры.
+- Sticky-строки/колонки рендерятся в отдельных слоях и не виртуализируются.
+- SSR fallback рендерит только первые N элементов/строк до гидрации.
+- Masonry и free-layout виртуализация не поддерживаются.
+
+### SSR fallback
+
+Используйте SSR fallback, чтобы отрендерить первые N элементов без доступа к DOM:
+
+```tsx
+<VirtualList
+  items={items}
+  itemKey={(item) => item.id}
+  renderItem={({ item }) => <Row item={item} />}
+  layout={{ sizeMode: 'fixed', itemSize: 36 }}
+  ssr={{ count: 6 }}
+/>
+```
+
+Для сетки:
+
+```tsx
+<VirtualGrid
+  rowCount={50}
+  columnCount={30}
+  rows={{ sizeMode: 'fixed', itemSize: 36 }}
+  columns={{ sizeMode: 'fixed', itemSize: 120 }}
+  renderCell={({ rowIndex, columnIndex }) => (
+    <Cell
+      rowIndex={rowIndex}
+      columnIndex={columnIndex}
+    />
+  )}
+  ssr={{ rows: 2, columns: 3 }}
+/>
+```
+
+## Истории компонентов
+
+<Stories of={VirtualListStories} />
+<Stories of={VirtualGridStories} />

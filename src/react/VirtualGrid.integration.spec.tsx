@@ -95,9 +95,7 @@ describe('VirtualGrid integration', () => {
         rows={{ sizeMode: 'fixed', itemSize: 20 }}
         columns={{ sizeMode: 'fixed', itemSize: 30 }}
         overscan={0}
-        renderCell={({ rowIndex, columnIndex }) => (
-          <div data-testid={`cell-${rowIndex}-${columnIndex}`} />
-        )}
+        renderCell={({ rowIndex, columnIndex }) => <div data-testid={`cell-${rowIndex}-${columnIndex}`} />}
         sticky={{
           top: 1,
           left: 1,
@@ -141,9 +139,7 @@ describe('VirtualGrid integration', () => {
         rows={{ sizeMode: 'fixed', itemSize: 20 }}
         columns={{ sizeMode: 'fixed', itemSize: 30 }}
         overscan={0}
-        renderCell={({ rowIndex, columnIndex }) => (
-          <div data-testid={`cell-${rowIndex}-${columnIndex}`} />
-        )}
+        renderCell={({ rowIndex, columnIndex }) => <div data-testid={`cell-${rowIndex}-${columnIndex}`} />}
       />,
     );
 
@@ -181,9 +177,7 @@ describe('VirtualGrid integration', () => {
           rows={{ sizeMode: 'fixed', itemSize: 20 }}
           columns={{ sizeMode: 'fixed', itemSize: 30 }}
           overscan={0}
-          renderCell={({ rowIndex, columnIndex }) => (
-            <div data-testid={`cell-${rowIndex}-${columnIndex}`} />
-          )}
+          renderCell={({ rowIndex, columnIndex }) => <div data-testid={`cell-${rowIndex}-${columnIndex}`} />}
           scroll={{
             position,
             onScroll: (next) => setPosition(next),
@@ -269,9 +263,7 @@ describe('VirtualGrid integration', () => {
         rows={{ sizeMode: 'dynamic', estimatedItemSize: 20 }}
         columns={{ sizeMode: 'dynamic', estimatedItemSize: 30 }}
         overscan={0}
-        renderCell={({ rowIndex, columnIndex }) => (
-          <div data-testid={`cell-${rowIndex}-${columnIndex}`} />
-        )}
+        renderCell={({ rowIndex, columnIndex }) => <div data-testid={`cell-${rowIndex}-${columnIndex}`} />}
       />,
     );
 
@@ -290,5 +282,47 @@ describe('VirtualGrid integration', () => {
 
     expect(viewport.scrollTop).toBe(0);
     expect(viewport.scrollLeft).toBe(0);
+  });
+
+  it('scrolls to cell via imperative handle and clamps out-of-range values', async () => {
+    const gridRef = React.createRef<VirtualGridHandle>();
+    const { container } = render(
+      <VirtualGrid
+        ref={gridRef}
+        rowCount={10}
+        columnCount={10}
+        rows={{ sizeMode: 'fixed', itemSize: 20 }}
+        columns={{ sizeMode: 'fixed', itemSize: 30 }}
+        overscan={0}
+        renderCell={({ rowIndex, columnIndex }) => <div data-testid={`cell-${rowIndex}-${columnIndex}`} />}
+      />,
+    );
+
+    const viewport = container.firstElementChild as HTMLElement;
+    setupViewport(viewport);
+    setClientSize(viewport, { width: 90, height: 60 });
+    await flushEffects();
+
+    act(() => {
+      triggerResize(viewport, { width: 90, height: 60 });
+    });
+
+    act(() => {
+      gridRef.current?.scrollToCell(4, 5);
+    });
+    expect(viewport.scrollTop).toBe(80);
+    expect(viewport.scrollLeft).toBe(150);
+
+    act(() => {
+      gridRef.current?.scrollToCell(-10, -20);
+    });
+    expect(viewport.scrollTop).toBe(0);
+    expect(viewport.scrollLeft).toBe(0);
+
+    act(() => {
+      gridRef.current?.scrollToCell(100, 100);
+    });
+    expect(viewport.scrollTop).toBe(140);
+    expect(viewport.scrollLeft).toBe(210);
   });
 });
