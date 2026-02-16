@@ -23,8 +23,7 @@ const getStickySlice = <T,>(items: readonly T[], count: number, fromEnd: boolean
 };
 
 function VirtualListInner<T>(props: VirtualListProps<T>, ref: Ref<VirtualListHandle>) {
-  const { items, itemKey, renderItem, layout, overscan, sticky, ssr, scroll, onRangeChange, className, style } =
-    props;
+  const { items, itemKey, renderItem, layout, overscan, sticky, ssr, scroll, onRangeChange, className, style } = props;
   const direction = layout?.direction ?? 'vertical';
   const sizeMode = layout?.sizeMode ?? 'fixed';
   const itemSize = layout?.itemSize;
@@ -54,7 +53,7 @@ function VirtualListInner<T>(props: VirtualListProps<T>, ref: Ref<VirtualListHan
   const ssrBodyCount = Math.max(0, Math.min(bodyCount, (ssr?.count ?? 0) - topCount));
   // Размеры sticky считаем по фиксированному размеру (или estimated в dynamic),
   // так как sticky-элементы не участвуют в измерениях виртуализированного body.
-  const itemExtent = sizeMode === 'fixed' ? itemSize ?? 0 : estimatedItemSize ?? 0;
+  const itemExtent = sizeMode === 'fixed' ? (itemSize ?? 0) : (estimatedItemSize ?? 0);
   const stickyTopSize = isVertical ? topCount * itemExtent : 0;
   const stickyBottomSize = isVertical ? bottomCount * itemExtent : 0;
 
@@ -165,7 +164,11 @@ function VirtualListInner<T>(props: VirtualListProps<T>, ref: Ref<VirtualListHan
   const stickyBottomItems = getStickySlice(items, bottomCount, true);
 
   return (
-    <div ref={setViewportRef} className={className} style={viewportStyle}>
+    <div
+      ref={setViewportRef}
+      className={className}
+      style={viewportStyle}
+    >
       <VirtualBodyLayer style={contentStyle}>
         {virtualItems.map((virtualItem) => {
           const actualIndex = virtualItem.index + topCount;
@@ -174,13 +177,13 @@ function VirtualListInner<T>(props: VirtualListProps<T>, ref: Ref<VirtualListHan
               ? {
                   position: 'absolute',
                   left: virtualItem.offset,
-                  width: virtualItem.size,
+                  ...(sizeMode === 'dynamic' ? { minWidth: virtualItem.size } : { width: virtualItem.size }),
                   height: '100%',
                 }
               : {
                   position: 'absolute',
                   top: virtualItem.offset,
-                  height: virtualItem.size,
+                  ...(sizeMode === 'dynamic' ? { minHeight: virtualItem.size } : { height: virtualItem.size }),
                   width: '100%',
                 };
 
@@ -197,7 +200,7 @@ function VirtualListInner<T>(props: VirtualListProps<T>, ref: Ref<VirtualListHan
       </VirtualBodyLayer>
       {renderStickyTop && stickyTopItems.length > 0 && (
         <StickyListLayer
-          position="top"
+          position='top'
           size={stickyTopSize}
           scrollOffsetX={viewportRef.current?.scrollLeft ?? scrollPosition.left}
           scrollOffsetY={currentScrollTop}
@@ -207,7 +210,7 @@ function VirtualListInner<T>(props: VirtualListProps<T>, ref: Ref<VirtualListHan
       )}
       {renderStickyBottom && stickyBottomItems.length > 0 && (
         <StickyListLayer
-          position="bottom"
+          position='bottom'
           size={stickyBottomSize}
           scrollOffsetX={viewportRef.current?.scrollLeft ?? scrollPosition.left}
           scrollOffsetY={currentScrollTop}
