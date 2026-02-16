@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react';
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 import { VirtualList } from '../VirtualList';
-import type { VirtualListProps } from '../types';
+import type { VirtualListHandle, VirtualListProps } from '../types';
 import type { ChatMessage, ListItem, TileRow } from './storyData';
 import {
   createChatMessages,
@@ -296,6 +296,70 @@ export const ControlledScroll: Story = {
             position,
             onScroll: (next) => setPosition(next),
           }}
+        />
+      </div>
+    );
+  },
+};
+
+export const ScrollToItemByInput: Story = {
+  name: 'Прокрутка к элементу',
+  render: (args: StoryListProps, context) => {
+    const locale = resolveStoryLocale(context.globals.locale);
+    const items = useMemo(() => createListItems(200, locale), [locale]);
+    const listRef = useRef<VirtualListHandle>(null);
+    const [inputValue, setInputValue] = useState('1');
+
+    const handleGoToIndex = () => {
+      const parsedValue = Number.parseInt(inputValue, 10);
+      if (Number.isNaN(parsedValue)) {
+        return;
+      }
+
+      const clampedIndex = Math.min(Math.max(parsedValue, 1), items.length);
+      if (clampedIndex !== parsedValue) {
+        setInputValue(String(clampedIndex));
+      }
+
+      listRef.current?.scrollToIndex(clampedIndex - 1, { align: 'start', behavior: 'auto' });
+    };
+
+    return (
+      <div>
+        <div style={{ marginBottom: 8, display: 'flex', alignItems: 'center', gap: 8, fontSize: 12 }}>
+          <span>{storyText.goToItem(locale)}:</span>
+          <label htmlFor='scroll-to-item-input'>{storyText.itemIndex(locale)}</label>
+          <input
+            id='scroll-to-item-input'
+            type='number'
+            min={1}
+            max={items.length}
+            value={inputValue}
+            onChange={(event) => setInputValue(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter') {
+                handleGoToIndex();
+              }
+            }}
+            style={{ width: 92, padding: '4px 6px', fontSize: 12 }}
+          />
+          <button
+            type='button'
+            onClick={handleGoToIndex}
+            style={{ padding: '4px 10px', fontSize: 12, cursor: 'pointer' }}
+          >
+            {storyText.go(locale)}
+          </button>
+          <span style={{ color: '#555' }}>{storyText.itemRangeHint(locale, items.length)}</span>
+        </div>
+        <VirtualList
+          {...args}
+          ref={listRef}
+          items={items}
+          itemKey={(item) => item.id}
+          renderItem={({ item }) => <div style={{ ...itemStyle, height: 36 }}>{item.label}</div>}
+          layout={{ sizeMode: 'fixed', itemSize: 36, direction: 'vertical' }}
+          style={viewportStyle}
         />
       </div>
     );

@@ -121,6 +121,18 @@ export const storyText = {
   sticky: (locale: StoryLocale): string => (locale === 'ru' ? 'закреплено' : 'sticky'),
   scrollTop: (locale: StoryLocale): string => (locale === 'ru' ? 'Прокрутка сверху' : 'ScrollTop'),
   scroll: (locale: StoryLocale): string => (locale === 'ru' ? 'Прокрутка' : 'Scroll'),
+  goToItem: (locale: StoryLocale): string => (locale === 'ru' ? 'Перейти к элементу' : 'Go to item'),
+  itemIndex: (locale: StoryLocale): string => (locale === 'ru' ? 'Индекс элемента' : 'Item index'),
+  itemRangeHint: (locale: StoryLocale, count: number): string =>
+    locale === 'ru' ? `Введите число от 1 до ${count}` : `Enter a number from 1 to ${count}`,
+  goToCell: (locale: StoryLocale): string => (locale === 'ru' ? 'Перейти к ячейке' : 'Go to cell'),
+  rowIndex: (locale: StoryLocale): string => (locale === 'ru' ? 'Строка' : 'Row'),
+  columnIndex: (locale: StoryLocale): string => (locale === 'ru' ? 'Колонка' : 'Column'),
+  rowRangeHint: (locale: StoryLocale, count: number): string =>
+    locale === 'ru' ? `Строки: 1..${count}` : `Rows: 1..${count}`,
+  columnRangeHint: (locale: StoryLocale, count: number): string =>
+    locale === 'ru' ? `Колонки: 1..${count}` : `Columns: 1..${count}`,
+  go: (locale: StoryLocale): string => (locale === 'ru' ? 'Перейти' : 'Go'),
   chatStoryDescription: (locale: StoryLocale): string =>
     locale === 'ru'
       ? 'Длинный чат с сообщениями переменной высоты для проверки динамических измерений и стабильности скролла.'

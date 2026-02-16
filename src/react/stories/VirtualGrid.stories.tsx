@@ -1,8 +1,16 @@
 import type { Meta, StoryObj } from '@storybook/react';
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { VirtualGrid } from '../VirtualGrid';
 import type { AxisConfig } from '../../shared/types';
-import { formatCellLabel, getColumnWidth, getRowHeight, resolveStoryLocale, storyText, type StoryLocale } from './storyData';
+import type { VirtualGridHandle } from '../types';
+import {
+  formatCellLabel,
+  getColumnWidth,
+  getRowHeight,
+  resolveStoryLocale,
+  storyText,
+  type StoryLocale,
+} from './storyData';
 
 const viewportStyle: React.CSSProperties = {
   height: 360,
@@ -105,31 +113,33 @@ export const StickyRowsColumns: Story = {
     const locale = resolveStoryLocale(context.globals.locale);
 
     return (
-    <VirtualGrid
-      rowCount={100}
-      columnCount={20}
-      rows={{ sizeMode: 'fixed', itemSize: 36 }}
-      columns={{ sizeMode: 'fixed', itemSize: 120 }}
-      sticky={{
-        top: 1,
-        left: 1,
-        renderTopStickyRow: ({ rowIndex }) => (
-          <div style={{ ...cellStyle, height: 36, background: '#fff7e6', fontWeight: 600 }}>
-            {storyText.header(locale, rowIndex + 1)}
-          </div>
-        ),
-        renderLeftStickyColumn: ({ columnIndex }) => (
-          <div style={{ ...cellStyle, width: 120, background: '#f6ffed', fontWeight: 600 }}>
-            {storyText.column(locale, columnIndex + 1)}
-          </div>
-        ),
-        renderCorner: ({ corner }) => (
-          <div style={{ ...cellStyle, background: '#e6f7ff', fontWeight: 700 }}>{corner.toUpperCase()}</div>
-        ),
-      }}
-      renderCell={({ rowIndex, columnIndex }) => <div style={cellStyle}>{formatCellLabel(rowIndex, columnIndex, locale)}</div>}
-      style={viewportStyle}
-    />
+      <VirtualGrid
+        rowCount={100}
+        columnCount={20}
+        rows={{ sizeMode: 'fixed', itemSize: 36 }}
+        columns={{ sizeMode: 'fixed', itemSize: 120 }}
+        sticky={{
+          top: 1,
+          left: 1,
+          renderTopStickyRow: ({ rowIndex }) => (
+            <div style={{ ...cellStyle, height: 36, background: '#fff7e6', fontWeight: 600 }}>
+              {storyText.header(locale, rowIndex + 1)}
+            </div>
+          ),
+          renderLeftStickyColumn: ({ columnIndex }) => (
+            <div style={{ ...cellStyle, width: 120, background: '#f6ffed', fontWeight: 600 }}>
+              {storyText.column(locale, columnIndex + 1)}
+            </div>
+          ),
+          renderCorner: ({ corner }) => (
+            <div style={{ ...cellStyle, background: '#e6f7ff', fontWeight: 700 }}>{corner.toUpperCase()}</div>
+          ),
+        }}
+        renderCell={({ rowIndex, columnIndex }) => (
+          <div style={cellStyle}>{formatCellLabel(rowIndex, columnIndex, locale)}</div>
+        )}
+        style={viewportStyle}
+      />
     );
   },
 };
@@ -157,6 +167,96 @@ export const ControlledScrollGrid: Story = {
             position,
             onScroll: (next) => setPosition(next),
           }}
+          style={viewportStyle}
+        />
+      </div>
+    );
+  },
+};
+
+export const ScrollToCellByInput: Story = {
+  name: 'Прокрутка к ячейке',
+  render: (_args, context) => {
+    const rowCount = 80;
+    const columnCount = 30;
+    const locale = resolveStoryLocale(context.globals.locale);
+    const gridRef = useRef<VirtualGridHandle>(null);
+    const [rowValue, setRowValue] = useState('1');
+    const [columnValue, setColumnValue] = useState('1');
+
+    const handleGoToCell = () => {
+      const parsedRow = Number.parseInt(rowValue, 10);
+      const parsedColumn = Number.parseInt(columnValue, 10);
+      if (Number.isNaN(parsedRow) || Number.isNaN(parsedColumn)) {
+        return;
+      }
+
+      const clampedRow = Math.min(Math.max(parsedRow, 1), rowCount);
+      const clampedColumn = Math.min(Math.max(parsedColumn, 1), columnCount);
+
+      if (clampedRow !== parsedRow) {
+        setRowValue(String(clampedRow));
+      }
+      if (clampedColumn !== parsedColumn) {
+        setColumnValue(String(clampedColumn));
+      }
+
+      gridRef.current?.scrollToCell(clampedRow - 1, clampedColumn - 1, { align: 'start', behavior: 'auto' });
+    };
+
+    return (
+      <div>
+        <div style={{ marginBottom: 8, display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, flexWrap: 'wrap' }}>
+          <span>{storyText.goToCell(locale)}:</span>
+          <label htmlFor='scroll-to-row-input'>{storyText.rowIndex(locale)}</label>
+          <input
+            id='scroll-to-row-input'
+            type='number'
+            min={1}
+            max={rowCount}
+            value={rowValue}
+            onChange={(event) => setRowValue(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter') {
+                handleGoToCell();
+              }
+            }}
+            style={{ width: 84, padding: '4px 6px', fontSize: 12 }}
+          />
+          <label htmlFor='scroll-to-column-input'>{storyText.columnIndex(locale)}</label>
+          <input
+            id='scroll-to-column-input'
+            type='number'
+            min={1}
+            max={columnCount}
+            value={columnValue}
+            onChange={(event) => setColumnValue(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter') {
+                handleGoToCell();
+              }
+            }}
+            style={{ width: 84, padding: '4px 6px', fontSize: 12 }}
+          />
+          <button
+            type='button'
+            onClick={handleGoToCell}
+            style={{ padding: '4px 10px', fontSize: 12, cursor: 'pointer' }}
+          >
+            {storyText.go(locale)}
+          </button>
+          <span style={{ color: '#555' }}>{storyText.rowRangeHint(locale, rowCount)}</span>
+          <span style={{ color: '#555' }}>{storyText.columnRangeHint(locale, columnCount)}</span>
+        </div>
+        <VirtualGrid
+          ref={gridRef}
+          rowCount={rowCount}
+          columnCount={columnCount}
+          rows={{ sizeMode: 'fixed', itemSize: 36 }}
+          columns={{ sizeMode: 'fixed', itemSize: 120 }}
+          renderCell={({ rowIndex, columnIndex }) => (
+            <div style={cellStyle}>{formatCellLabel(rowIndex, columnIndex, locale)}</div>
+          )}
           style={viewportStyle}
         />
       </div>

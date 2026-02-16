@@ -175,11 +175,9 @@ describe('VirtualList integration', () => {
         sticky={{
           top: 1,
           bottom: 1,
-          renderStickyTop: ({ items: stickyItems }) => (
-            <div data-testid="sticky-top">{stickyItems.join(',')}</div>
-          ),
+          renderStickyTop: ({ items: stickyItems }) => <div data-testid='sticky-top'>{stickyItems.join(',')}</div>,
           renderStickyBottom: ({ items: stickyItems }) => (
-            <div data-testid="sticky-bottom">{stickyItems.join(',')}</div>
+            <div data-testid='sticky-bottom'>{stickyItems.join(',')}</div>
           ),
         }}
       />,
@@ -199,5 +197,44 @@ describe('VirtualList integration', () => {
     expect(bodyLayer?.style.paddingBottom).toBe('0px');
     expect(getByTestId('sticky-top').textContent).toBe('Alpha');
     expect(getByTestId('sticky-bottom').textContent).toBe('Gamma');
+  });
+
+  it('scrolls to index via imperative handle and clamps out-of-range values', async () => {
+    const items = Array.from({ length: 10 }, (_, index) => `Item ${index}`);
+    const listRef = React.createRef<VirtualListHandle>();
+    const { container } = render(
+      <VirtualList
+        ref={listRef}
+        items={items}
+        itemKey={(item) => item}
+        renderItem={({ index }) => <div data-testid={`item-${index}`} />}
+        layout={{ sizeMode: 'fixed', itemSize: 20 }}
+        overscan={0}
+      />,
+    );
+
+    const viewport = container.firstElementChild as HTMLElement;
+    setupViewport(viewport);
+    setClientSize(viewport, { width: 200, height: 60 });
+    await flushEffects();
+
+    act(() => {
+      triggerResize(viewport, { width: 200, height: 60 });
+    });
+
+    act(() => {
+      listRef.current?.scrollToIndex(4);
+    });
+    expect(viewport.scrollTop).toBe(80);
+
+    act(() => {
+      listRef.current?.scrollToIndex(-10);
+    });
+    expect(viewport.scrollTop).toBe(0);
+
+    act(() => {
+      listRef.current?.scrollToIndex(100);
+    });
+    expect(viewport.scrollTop).toBe(140);
   });
 });
