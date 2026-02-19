@@ -21,11 +21,15 @@ export function StickyListLayer({ position, size, scrollOffsetX, scrollOffsetY, 
     height: size,
     pointerEvents: 'none',
     zIndex: 2,
-    transform: `translate(${scrollOffsetX}px, ${scrollOffsetY}px)`,
+    willChange: 'transform',
+    transform: `translate3d(${scrollOffsetX}px, ${scrollOffsetY}px, 0)`,
   };
 
   return (
-    <div data-virtual-layer={`sticky-${position}`} style={style}>
+    <div
+      data-virtual-layer={`sticky-${position}`}
+      style={style}
+    >
       <div style={{ pointerEvents: 'auto', height: '100%' }}>{children}</div>
     </div>
   );

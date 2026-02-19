@@ -249,8 +249,8 @@ describe('VirtualGrid integration', () => {
 
     const topWrapper = getByTestId('sticky-top-0').parentElement?.parentElement;
     const leftWrapper = getByTestId('sticky-left-0').parentElement?.parentElement;
-    expect(topWrapper?.style.transform).toBe('translate(30px, 40px)');
-    expect(leftWrapper?.style.transform).toBe('translate(30px, 40px)');
+    expect(topWrapper?.parentElement?.style.transform).toBe('translate3d(30px, 40px, 0)');
+    expect(leftWrapper?.parentElement?.style.transform).toBe('translate3d(30px, 40px, 0)');
   });
 
   it('renders bottom/right sticky zones in correct order', async () => {

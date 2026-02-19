@@ -20,6 +20,7 @@ const baseLayerStyle: CSSProperties = {
   inset: 0,
   pointerEvents: 'none',
   zIndex: 2,
+  willChange: 'transform',
 };
 
 export function StickyLayer({ orientation, position, items, scrollOffsetX, scrollOffsetY, render }: StickyLayerProps) {
@@ -28,10 +29,16 @@ export function StickyLayer({ orientation, position, items, scrollOffsetX, scrol
   }
 
   const isRow = orientation === 'row';
-  const translate = `translate(${scrollOffsetX}px, ${scrollOffsetY}px)`;
+  const layerStyle: CSSProperties = {
+    ...baseLayerStyle,
+    transform: `translate3d(${scrollOffsetX}px, ${scrollOffsetY}px, 0)`,
+  };
 
   return (
-    <div data-virtual-layer="sticky" style={baseLayerStyle}>
+    <div
+      data-virtual-layer='sticky'
+      style={layerStyle}
+    >
       {items.map((item) => {
         const itemStyle: CSSProperties = isRow
           ? {
@@ -40,7 +47,6 @@ export function StickyLayer({ orientation, position, items, scrollOffsetX, scrol
               right: 0,
               height: item.size,
               [position === 'start' ? 'top' : 'bottom']: item.offset,
-              transform: translate,
             }
           : {
               position: 'absolute',
@@ -48,11 +54,13 @@ export function StickyLayer({ orientation, position, items, scrollOffsetX, scrol
               bottom: 0,
               width: item.size,
               [position === 'start' ? 'left' : 'right']: item.offset,
-              transform: translate,
             };
 
         return (
-          <div key={`${position}-${item.index}`} style={itemStyle}>
+          <div
+            key={`${position}-${item.index}`}
+            style={itemStyle}
+          >
             <div style={{ pointerEvents: 'auto', height: '100%' }}>{render({ index: item.index })}</div>
           </div>
         );

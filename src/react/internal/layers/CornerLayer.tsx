@@ -15,6 +15,7 @@ const baseCornerStyle: CSSProperties = {
   position: 'absolute',
   pointerEvents: 'none',
   zIndex: 3,
+  willChange: 'transform',
 };
 
 export function CornerLayer({ corner, width, height, scrollOffsetX, scrollOffsetY, render }: CornerLayerProps) {
@@ -30,11 +31,14 @@ export function CornerLayer({ corner, width, height, scrollOffsetX, scrollOffset
     bottom: corner.startsWith('b') ? 0 : undefined,
     left: corner.endsWith('l') ? 0 : undefined,
     right: corner.endsWith('r') ? 0 : undefined,
-    transform: `translate(${scrollOffsetX ?? 0}px, ${scrollOffsetY ?? 0}px)`,
+    transform: `translate3d(${scrollOffsetX ?? 0}px, ${scrollOffsetY ?? 0}px, 0)`,
   };
 
   return (
-    <div data-virtual-layer={`corner-${corner}`} style={style}>
+    <div
+      data-virtual-layer={`corner-${corner}`}
+      style={style}
+    >
       <div style={{ pointerEvents: 'auto', height: '100%' }}>{render({ corner })}</div>
     </div>
   );
