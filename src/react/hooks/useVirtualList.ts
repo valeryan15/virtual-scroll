@@ -108,15 +108,15 @@ export function useVirtualList(args: UseVirtualListArgs): UseVirtualListResult {
     if (!isHydrated && ssrCount > 0) {
       return { start: 0, end: ssrCount, offset: 0 };
     }
-    const stickyExtent = sizeMode === 'fixed' ? itemSize ?? 0 : estimatedItemSize ?? 0;
+    const stickyExtent = sizeMode === 'fixed' ? (itemSize ?? 0) : (estimatedItemSize ?? 0);
     const startOffset = direction === 'vertical' ? (sticky?.top ?? 0) * stickyExtent : 0;
     const endOffset = direction === 'vertical' ? (sticky?.bottom ?? 0) * stickyExtent : 0;
     const currentScrollOffset =
       direction === 'horizontal'
-        ? viewportRef.current?.scrollLeft ?? scrollPosition.left
-        : viewportRef.current?.scrollTop ?? scrollPosition.top;
+        ? (viewportRef.current?.scrollLeft ?? scrollPosition.left)
+        : (viewportRef.current?.scrollTop ?? scrollPosition.top);
     const viewportExtent = direction === 'horizontal' ? viewportSize.width : viewportSize.height;
-    const effectiveScrollOffset = Math.max(0, currentScrollOffset - startOffset);
+    const effectiveScrollOffset = Math.max(0, currentScrollOffset);
     const effectiveExtent = Math.max(0, viewportExtent - startOffset - endOffset);
     return axis.getRange(effectiveScrollOffset, effectiveExtent, overscanValue);
   }, [
@@ -169,7 +169,7 @@ export function useVirtualList(args: UseVirtualListArgs): UseVirtualListResult {
       const safeIndex = Math.min(Math.max(index, 0), axisModel.count - 1);
       const baseOffset = axisModel.getOffsetByIndex(safeIndex);
       const itemExtent = getItemSizeFromAxis(axisModel, safeIndex, itemSize ?? 0);
-      const stickyExtent = sizeMode === 'fixed' ? itemSize ?? 0 : estimatedItemSize ?? 0;
+      const stickyExtent = sizeMode === 'fixed' ? (itemSize ?? 0) : (estimatedItemSize ?? 0);
       const startOffset = direction === 'vertical' ? (sticky?.top ?? 0) * stickyExtent : 0;
       const endOffset = direction === 'vertical' ? (sticky?.bottom ?? 0) * stickyExtent : 0;
       const viewportExtent = direction === 'horizontal' ? viewportSize.width : viewportSize.height;
@@ -184,7 +184,7 @@ export function useVirtualList(args: UseVirtualListArgs): UseVirtualListResult {
       } else if (align === 'nearest') {
         const current = direction === 'horizontal' ? element.scrollLeft : element.scrollTop;
         const end = baseOffset + itemExtent;
-        const effectiveCurrent = Math.max(0, current - startOffset);
+        const effectiveCurrent = Math.max(0, current);
         const viewportEnd = effectiveCurrent + effectiveExtent;
         if (baseOffset >= effectiveCurrent && end <= viewportEnd) {
           return;
@@ -192,7 +192,7 @@ export function useVirtualList(args: UseVirtualListArgs): UseVirtualListResult {
         targetOffset = baseOffset < effectiveCurrent ? baseOffset : end - effectiveExtent;
       }
 
-      const finalOffset = Math.max(0, targetOffset + startOffset);
+      const finalOffset = Math.max(0, targetOffset);
       if (direction === 'horizontal') {
         element.scrollTo({ left: finalOffset, behavior: options?.behavior });
       } else {
@@ -257,11 +257,9 @@ export function useVirtualList(args: UseVirtualListArgs): UseVirtualListResult {
 
         const currentScrollOffset =
           direction === 'horizontal'
-            ? viewportRef.current?.scrollLeft ?? scrollOffsetRef.current
-            : viewportRef.current?.scrollTop ?? scrollOffsetRef.current;
-        const stickyExtent = estimatedItemSize ?? 0;
-        const startOffset = direction === 'vertical' ? (sticky?.top ?? 0) * stickyExtent : 0;
-        const effectiveScrollOffset = Math.max(0, currentScrollOffset - startOffset);
+            ? (viewportRef.current?.scrollLeft ?? scrollOffsetRef.current)
+            : (viewportRef.current?.scrollTop ?? scrollOffsetRef.current);
+        const effectiveScrollOffset = Math.max(0, currentScrollOffset);
         const anchor = anchorManager.capture({
           scrollOffset: effectiveScrollOffset,
           rangeStart: rangeRef.current.start,
@@ -280,7 +278,7 @@ export function useVirtualList(args: UseVirtualListArgs): UseVirtualListResult {
             count: axisModel.count,
             getOffsetByIndex: axisModel.getOffsetByIndex,
           });
-          const finalOffset = nextOffset + startOffset;
+          const finalOffset = nextOffset;
           if (direction === 'horizontal') {
             if (Math.abs(element.scrollLeft - finalOffset) > 0.5) {
               element.scrollLeft = finalOffset;
@@ -314,28 +312,25 @@ export function useVirtualList(args: UseVirtualListArgs): UseVirtualListResult {
     };
   }, [anchorManager, direction, estimatedItemSize, itemSize, sizeMode, sticky?.top, viewportRef]);
 
-  const measureElement = useCallback(
-    (index: number, element: HTMLElement | null) => {
-      const state = measurementRef.current;
-      if (!state) {
-        return;
-      }
+  const measureElement = useCallback((index: number, element: HTMLElement | null) => {
+    const state = measurementRef.current;
+    if (!state) {
+      return;
+    }
 
-      if (!element) {
-        for (const [node, storedIndex] of state.observed.entries()) {
-          if (storedIndex === index) {
-            state.observer.unobserve(node);
-            state.observed.delete(node);
-          }
+    if (!element) {
+      for (const [node, storedIndex] of state.observed.entries()) {
+        if (storedIndex === index) {
+          state.observer.unobserve(node);
+          state.observed.delete(node);
         }
-        return;
       }
+      return;
+    }
 
-      state.observed.set(element, index);
-      state.observer.observe(element);
-    },
-    [],
-  );
+    state.observed.set(element, index);
+    state.observer.observe(element);
+  }, []);
 
   const items = useMemo(() => {
     const result: VirtualItem[] = [];
@@ -367,11 +362,9 @@ export function useVirtualList(args: UseVirtualListArgs): UseVirtualListResult {
 
     const currentScrollOffset =
       direction === 'horizontal'
-        ? viewportRef.current?.scrollLeft ?? scrollOffsetRef.current
-        : viewportRef.current?.scrollTop ?? scrollOffsetRef.current;
-    const stickyExtent = estimatedItemSize ?? 0;
-    const startOffset = direction === 'vertical' ? (sticky?.top ?? 0) * stickyExtent : 0;
-    const effectiveScrollOffset = Math.max(0, currentScrollOffset - startOffset);
+        ? (viewportRef.current?.scrollLeft ?? scrollOffsetRef.current)
+        : (viewportRef.current?.scrollTop ?? scrollOffsetRef.current);
+    const effectiveScrollOffset = Math.max(0, currentScrollOffset);
     const anchor = anchorManager.capture({
       scrollOffset: effectiveScrollOffset,
       rangeStart: rangeRef.current.start,
@@ -393,7 +386,7 @@ export function useVirtualList(args: UseVirtualListArgs): UseVirtualListResult {
         count: axisModel.count,
         getOffsetByIndex: axisModel.getOffsetByIndex,
       });
-      const finalOffset = nextOffset + startOffset;
+      const finalOffset = nextOffset;
       if (direction === 'horizontal') {
         if (Math.abs(viewportElement.scrollLeft - finalOffset) > 0.5) {
           viewportElement.scrollLeft = finalOffset;

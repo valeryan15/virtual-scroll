@@ -199,6 +199,45 @@ describe('VirtualList integration', () => {
     expect(getByTestId('sticky-bottom').textContent).toBe('Gamma');
   });
 
+  it('keeps the last body item visible at the end with sticky top and bottom', async () => {
+    const items = Array.from({ length: 200 }, (_, index) => `Item ${index + 1}`);
+    const listRef = React.createRef<VirtualListHandle>();
+    const { container, queryByTestId } = render(
+      <VirtualList
+        ref={listRef}
+        items={items}
+        itemKey={(item) => item}
+        renderItem={({ index }) => <div data-testid={`item-${index}`} />}
+        layout={{ sizeMode: 'fixed', itemSize: 36 }}
+        overscan={0}
+        sticky={{
+          top: 1,
+          bottom: 1,
+          renderStickyTop: ({ items: stickyItems }) => <div>{stickyItems[0]}</div>,
+          renderStickyBottom: ({ items: stickyItems }) => <div>{stickyItems[0]}</div>,
+        }}
+      />,
+    );
+
+    const viewport = container.firstElementChild as HTMLElement;
+    setupViewport(viewport);
+    setClientSize(viewport, { width: 320, height: 360 });
+    await flushEffects();
+
+    act(() => {
+      triggerResize(viewport, { width: 320, height: 360 });
+    });
+
+    await act(async () => {
+      listRef.current?.scrollToIndex(198, { align: 'end' });
+      listRef.current?.measure();
+      await Promise.resolve();
+    });
+
+    expect(queryByTestId('item-197')).toBeTruthy();
+    expect(queryByTestId('item-198')).toBeTruthy();
+  });
+
   it('scrolls to index via imperative handle and clamps out-of-range values', async () => {
     const items = Array.from({ length: 10 }, (_, index) => `Item ${index}`);
     const listRef = React.createRef<VirtualListHandle>();
