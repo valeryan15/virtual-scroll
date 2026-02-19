@@ -258,12 +258,6 @@ function VirtualGridInner(props: VirtualGridProps, ref: Ref<VirtualGridHandle>) 
       position: 'relative',
       width: totalWidth + leftWidth + rightWidth,
       height: totalHeight + topHeight + bottomHeight,
-      // Резервируем место под верхние/левые sticky-регионы, чтобы body начинался после них.
-      paddingTop: topHeight,
-      paddingBottom: bottomHeight,
-      paddingLeft: leftWidth,
-      paddingRight: rightWidth,
-      boxSizing: 'border-box',
     }),
     [bottomHeight, leftWidth, rightWidth, topHeight, totalHeight, totalWidth],
   );
@@ -299,8 +293,8 @@ function VirtualGridInner(props: VirtualGridProps, ref: Ref<VirtualGridHandle>) 
               ref={setRef}
               style={{
                 position: 'absolute',
-                top: cell.y,
-                left: cell.x,
+                top: topHeight + cell.y,
+                left: leftWidth + cell.x,
                 width: cell.width,
                 height: cell.height,
               }}

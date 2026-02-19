@@ -116,8 +116,14 @@ describe('VirtualGrid integration', () => {
     });
 
     const bodyLayer = container.querySelector('[data-virtual-layer="body"]') as HTMLElement;
-    expect(bodyLayer?.style.paddingTop).toBe('20px');
-    expect(bodyLayer?.style.paddingLeft).toBe('30px');
+    expect(bodyLayer?.style.height).toBe('60px');
+    expect(bodyLayer?.style.width).toBe('90px');
+    expect(bodyLayer?.style.paddingTop).toBe('');
+    expect(bodyLayer?.style.paddingLeft).toBe('');
+
+    const firstBodyCell = getByTestId('cell-1-1').parentElement as HTMLElement;
+    expect(firstBodyCell.style.top).toBe('20px');
+    expect(firstBodyCell.style.left).toBe('30px');
 
     expect(getByTestId('sticky-top-0')).toBeTruthy();
     expect(getByTestId('sticky-left-0')).toBeTruthy();
