@@ -194,7 +194,7 @@ describe('VirtualList integration', () => {
 
     const bodyLayer = container.querySelector('[data-virtual-layer="body"]') as HTMLElement;
     expect(bodyLayer?.style.paddingTop).toBe('20px');
-    expect(bodyLayer?.style.paddingBottom).toBe('0px');
+    expect(bodyLayer?.style.paddingBottom).toBe('20px');
     expect(getByTestId('sticky-top').textContent).toBe('Alpha');
     expect(getByTestId('sticky-bottom').textContent).toBe('Gamma');
   });

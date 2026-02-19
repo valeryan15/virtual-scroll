@@ -155,10 +155,10 @@ function VirtualListInner<T>(props: VirtualListProps<T>, ref: Ref<VirtualListHan
       width: '100%',
       // Резервируем место под верхние sticky-элементы, чтобы body начинался ниже.
       paddingTop: stickyTopSize,
-      paddingBottom: 0,
+      paddingBottom: stickyBottomSize,
       boxSizing: 'border-box',
     };
-  }, [direction, stickyTopSize, totalSize]);
+  }, [direction, stickyBottomSize, stickyTopSize, totalSize]);
 
   const stickyTopItems = getStickySlice(items, topCount, false);
   const stickyBottomItems = getStickySlice(items, bottomCount, true);

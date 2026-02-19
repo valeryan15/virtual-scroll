@@ -253,6 +253,44 @@ describe('VirtualGrid integration', () => {
     expect(leftWrapper?.style.transform).toBe('translate(30px, 40px)');
   });
 
+  it('renders bottom/right sticky zones in correct order', async () => {
+    const { container, getByTestId } = render(
+      <VirtualGrid
+        rowCount={4}
+        columnCount={4}
+        rows={{ sizeMode: 'fixed', itemSize: 10 }}
+        columns={{ sizeMode: 'fixed', itemSize: 15 }}
+        overscan={0}
+        renderCell={({ rowIndex, columnIndex }) => <div data-testid={`cell-${rowIndex}-${columnIndex}`} />}
+        sticky={{
+          bottom: 2,
+          right: 2,
+          renderBottomStickyRow: ({ rowIndex }) => <div data-testid={`sticky-bottom-${rowIndex}`} />,
+          renderRightStickyColumn: ({ columnIndex }) => <div data-testid={`sticky-right-${columnIndex}`} />,
+        }}
+      />,
+    );
+
+    const viewport = container.firstElementChild as HTMLElement;
+    setupViewport(viewport);
+    setClientSize(viewport, { width: 120, height: 60 });
+    await flushEffects();
+
+    act(() => {
+      triggerResize(viewport, { width: 120, height: 60 });
+    });
+
+    const bottomLastWrapper = getByTestId('sticky-bottom-3').parentElement?.parentElement;
+    const bottomPrevWrapper = getByTestId('sticky-bottom-2').parentElement?.parentElement;
+    expect(bottomLastWrapper?.style.bottom).toBe('0px');
+    expect(bottomPrevWrapper?.style.bottom).toBe('10px');
+
+    const rightLastWrapper = getByTestId('sticky-right-3').parentElement?.parentElement;
+    const rightPrevWrapper = getByTestId('sticky-right-2').parentElement?.parentElement;
+    expect(rightLastWrapper?.style.right).toBe('0px');
+    expect(rightPrevWrapper?.style.right).toBe('15px');
+  });
+
   it('skips dynamic scroll when allowEstimate is false', async () => {
     const gridRef = React.createRef<VirtualGridHandle>();
     const { container } = render(

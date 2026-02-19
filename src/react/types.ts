@@ -1,5 +1,12 @@
 import type { CSSProperties, Key, ReactNode, RefObject } from 'react';
-import type { AxisConfig, GridOverscan, GridRange, Overscan1D, ScrollPosition, ScrollToIndexOptions } from '../shared/types';
+import type {
+  AxisConfig,
+  GridOverscan,
+  GridRange,
+  Overscan1D,
+  ScrollPosition,
+  ScrollToIndexOptions,
+} from '../shared/types';
 
 export type VirtualListProps<T> = {
   items: readonly T[];
@@ -44,7 +51,9 @@ export type VirtualGridProps = {
     left?: number;
     right?: number;
     renderTopStickyRow?: (args: { rowIndex: number }) => ReactNode;
+    renderBottomStickyRow?: (args: { rowIndex: number }) => ReactNode;
     renderLeftStickyColumn?: (args: { columnIndex: number }) => ReactNode;
+    renderRightStickyColumn?: (args: { columnIndex: number }) => ReactNode;
     renderCorner?: (args: { corner: 'tl' | 'tr' | 'bl' | 'br' }) => ReactNode;
   };
   ssr?: {
