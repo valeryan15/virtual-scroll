@@ -216,7 +216,7 @@ const BaseList = ({
       itemKey={(item) => item.id}
       renderItem={({ item, index }) => (
         <div
-          style={{ ...itemStyle, height: props.layout?.sizeMode === 'dynamic' ? getListItemHeight(index) : undefined }}
+          style={{ ...itemStyle, height: props.layout?.sizeMode === 'dynamic' ? getListItemHeight(index) : '100%' }}
         >
           {item.label}
         </div>

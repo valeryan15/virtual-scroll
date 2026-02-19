@@ -90,7 +90,7 @@ describe('VirtualList integration', () => {
   it('renders visible window and updates on scroll', async () => {
     const items = Array.from({ length: 10 }, (_, index) => `Item ${index}`);
     const listRef = React.createRef<VirtualListHandle>();
-    const { container, queryByTestId } = render(
+    const { container, getByTestId, queryByTestId } = render(
       <VirtualList
         ref={listRef}
         items={items}
@@ -193,8 +193,9 @@ describe('VirtualList integration', () => {
     });
 
     const bodyLayer = container.querySelector('[data-virtual-layer="body"]') as HTMLElement;
-    expect(bodyLayer?.style.paddingTop).toBe('20px');
-    expect(bodyLayer?.style.paddingBottom).toBe('20px');
+    expect(bodyLayer?.style.height).toBe('60px');
+    expect(bodyLayer?.style.paddingTop).toBe('');
+    expect(bodyLayer?.style.paddingBottom).toBe('');
     expect(getByTestId('sticky-top').textContent).toBe('Alpha');
     expect(getByTestId('sticky-bottom').textContent).toBe('Gamma');
   });
@@ -202,7 +203,7 @@ describe('VirtualList integration', () => {
   it('keeps the last body item visible at the end with sticky top and bottom', async () => {
     const items = Array.from({ length: 200 }, (_, index) => `Item ${index + 1}`);
     const listRef = React.createRef<VirtualListHandle>();
-    const { container, queryByTestId } = render(
+    const { container, getByTestId, queryByTestId } = render(
       <VirtualList
         ref={listRef}
         items={items}
@@ -227,6 +228,9 @@ describe('VirtualList integration', () => {
     act(() => {
       triggerResize(viewport, { width: 320, height: 360 });
     });
+
+    const firstBodyItem = getByTestId('item-1').parentElement as HTMLElement;
+    expect(firstBodyItem.style.top).toBe('36px');
 
     await act(async () => {
       listRef.current?.scrollToIndex(198, { align: 'end' });

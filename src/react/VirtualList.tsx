@@ -151,12 +151,8 @@ function VirtualListInner<T>(props: VirtualListProps<T>, ref: Ref<VirtualListHan
     }
     return {
       position: 'relative',
-      height: totalSize,
+      height: totalSize + stickyTopSize + stickyBottomSize,
       width: '100%',
-      // Резервируем место под верхние sticky-элементы, чтобы body начинался ниже.
-      paddingTop: stickyTopSize,
-      paddingBottom: stickyBottomSize,
-      boxSizing: 'border-box',
     };
   }, [direction, stickyBottomSize, stickyTopSize, totalSize]);
 
@@ -182,7 +178,7 @@ function VirtualListInner<T>(props: VirtualListProps<T>, ref: Ref<VirtualListHan
                 }
               : {
                   position: 'absolute',
-                  top: virtualItem.offset,
+                  top: stickyTopSize + virtualItem.offset,
                   ...(sizeMode === 'dynamic' ? { minHeight: virtualItem.size } : { height: virtualItem.size }),
                   width: '100%',
                 };
