@@ -35,7 +35,23 @@ yarn run format
 yarn run format:check
 yarn run test
 yarn run storybook
+yarn run changeset
+yarn run version-packages
+yarn run release
 ```
+
+## Публикация в npm
+
+- Версионирование и changelog управляются через Changesets.
+- Для изменений, которые должны попасть в релиз, создайте changeset:
+
+```bash
+yarn changeset
+```
+
+- Публикация запускается workflow `Release` после merge в `main`.
+- Рекомендуемый способ публикации: npm Trusted Publishing (GitHub OIDC), без хранения `NPM_TOKEN`.
+- Если Trusted Publishing не используется, добавьте `NPM_TOKEN` в GitHub: `Settings -> Secrets and variables -> Actions -> Repository secrets`.
 
 ## Husky
 

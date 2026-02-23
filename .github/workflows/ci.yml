@@ -32,3 +32,9 @@ jobs:
 
       - name: Test
         run: yarn test
+
+      - name: Build
+        run: yarn build
+
+      - name: Pack dry run
+        run: npm pack --dry-run
