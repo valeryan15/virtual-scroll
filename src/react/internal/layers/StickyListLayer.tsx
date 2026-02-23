@@ -1,4 +1,5 @@
-import type { CSSProperties, ReactNode } from 'react';
+import { useEffect, useRef } from 'react';
+import type { CSSProperties, ReactNode, RefObject } from 'react';
 
 type StickyListLayerProps = {
   position: 'top' | 'bottom';
@@ -7,6 +8,7 @@ type StickyListLayerProps = {
   scrollOffsetY: number;
   children: ReactNode;
   contentRef?: (element: HTMLDivElement | null) => void;
+  viewportRef?: RefObject<HTMLElement | null>;
 };
 
 export function StickyListLayer({
@@ -16,6 +18,7 @@ export function StickyListLayer({
   scrollOffsetY,
   children,
   contentRef,
+  viewportRef,
 }: StickyListLayerProps) {
   if (typeof size === 'number' && size <= 0) {
     return null;
@@ -33,8 +36,30 @@ export function StickyListLayer({
     transform: `translate3d(${scrollOffsetX}px, ${scrollOffsetY}px, 0)`,
   };
 
+  const layerRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    const layer = layerRef.current;
+    const viewport = viewportRef?.current;
+    if (!layer || !viewport) {
+      return;
+    }
+
+    const syncTransform = () => {
+      layer.style.transform = `translate3d(${viewport.scrollLeft}px, ${viewport.scrollTop}px, 0)`;
+    };
+
+    syncTransform();
+    viewport.addEventListener('scroll', syncTransform, { passive: true });
+
+    return () => {
+      viewport.removeEventListener('scroll', syncTransform);
+    };
+  }, [viewportRef]);
+
   return (
     <div
+      ref={layerRef}
       data-virtual-layer={`sticky-${position}`}
       style={style}
     >

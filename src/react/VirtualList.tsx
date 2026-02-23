@@ -259,6 +259,7 @@ function VirtualListInner<T>(props: VirtualListProps<T>, ref: Ref<VirtualListHan
           scrollOffsetX={viewportRef.current?.scrollLeft ?? scrollPosition.left}
           scrollOffsetY={currentScrollTop}
           contentRef={setStickyTopContentRef}
+          viewportRef={viewportRef}
         >
           {renderStickyTop({ items: stickyTopItems })}
         </StickyListLayer>
@@ -270,6 +271,7 @@ function VirtualListInner<T>(props: VirtualListProps<T>, ref: Ref<VirtualListHan
           scrollOffsetX={viewportRef.current?.scrollLeft ?? scrollPosition.left}
           scrollOffsetY={currentScrollTop}
           contentRef={setStickyBottomContentRef}
+          viewportRef={viewportRef}
         >
           {renderStickyBottom({ items: stickyBottomItems })}
         </StickyListLayer>

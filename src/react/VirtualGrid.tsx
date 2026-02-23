@@ -383,6 +383,7 @@ function VirtualGridInner(props: VirtualGridProps, ref: Ref<VirtualGridHandle>) 
           scrollOffsetX={currentScrollLeft}
           scrollOffsetY={currentScrollTop}
           onMeasureItem={rows.sizeMode === 'dynamic' ? updateStickyRowSize : undefined}
+          viewportRef={viewportRef}
           render={({ index }) => renderTopStickyRow({ rowIndex: index })}
         />
       )}
@@ -394,6 +395,7 @@ function VirtualGridInner(props: VirtualGridProps, ref: Ref<VirtualGridHandle>) 
           scrollOffsetX={currentScrollLeft}
           scrollOffsetY={currentScrollTop}
           onMeasureItem={rows.sizeMode === 'dynamic' ? updateStickyRowSize : undefined}
+          viewportRef={viewportRef}
           render={({ index }) => renderBottomStickyRow({ rowIndex: index })}
         />
       )}
@@ -405,6 +407,7 @@ function VirtualGridInner(props: VirtualGridProps, ref: Ref<VirtualGridHandle>) 
           scrollOffsetX={currentScrollLeft}
           scrollOffsetY={currentScrollTop}
           onMeasureItem={columns.sizeMode === 'dynamic' ? updateStickyColumnSize : undefined}
+          viewportRef={viewportRef}
           render={({ index }) => renderLeftStickyColumn({ columnIndex: index })}
         />
       )}
@@ -416,6 +419,7 @@ function VirtualGridInner(props: VirtualGridProps, ref: Ref<VirtualGridHandle>) 
           scrollOffsetX={currentScrollLeft}
           scrollOffsetY={currentScrollTop}
           onMeasureItem={columns.sizeMode === 'dynamic' ? updateStickyColumnSize : undefined}
+          viewportRef={viewportRef}
           render={({ index }) => renderRightStickyColumn({ columnIndex: index })}
         />
       )}
@@ -426,6 +430,7 @@ function VirtualGridInner(props: VirtualGridProps, ref: Ref<VirtualGridHandle>) 
           height={topHeight}
           scrollOffsetX={currentScrollLeft}
           scrollOffsetY={currentScrollTop}
+          viewportRef={viewportRef}
           render={renderCorner}
         />
       )}
@@ -436,6 +441,7 @@ function VirtualGridInner(props: VirtualGridProps, ref: Ref<VirtualGridHandle>) 
           height={topHeight}
           scrollOffsetX={currentScrollLeft}
           scrollOffsetY={currentScrollTop}
+          viewportRef={viewportRef}
           render={renderCorner}
         />
       )}
@@ -446,6 +452,7 @@ function VirtualGridInner(props: VirtualGridProps, ref: Ref<VirtualGridHandle>) 
           height={bottomHeight}
           scrollOffsetX={currentScrollLeft}
           scrollOffsetY={currentScrollTop}
+          viewportRef={viewportRef}
           render={renderCorner}
         />
       )}
@@ -456,6 +463,7 @@ function VirtualGridInner(props: VirtualGridProps, ref: Ref<VirtualGridHandle>) 
           height={bottomHeight}
           scrollOffsetX={currentScrollLeft}
           scrollOffsetY={currentScrollTop}
+          viewportRef={viewportRef}
           render={renderCorner}
         />
       )}

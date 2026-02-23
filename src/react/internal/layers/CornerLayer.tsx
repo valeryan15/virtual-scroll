@@ -1,4 +1,5 @@
-import type { CSSProperties, ReactNode } from 'react';
+import { useEffect, useRef } from 'react';
+import type { CSSProperties, ReactNode, RefObject } from 'react';
 
 type Corner = 'tl' | 'tr' | 'bl' | 'br';
 
@@ -9,6 +10,7 @@ type CornerLayerProps = {
   scrollOffsetX?: number;
   scrollOffsetY?: number;
   render: (args: { corner: Corner }) => ReactNode;
+  viewportRef?: RefObject<HTMLElement | null>;
 };
 
 const baseCornerStyle: CSSProperties = {
@@ -18,7 +20,15 @@ const baseCornerStyle: CSSProperties = {
   willChange: 'transform',
 };
 
-export function CornerLayer({ corner, width, height, scrollOffsetX, scrollOffsetY, render }: CornerLayerProps) {
+export function CornerLayer({
+  corner,
+  width,
+  height,
+  scrollOffsetX,
+  scrollOffsetY,
+  render,
+  viewportRef,
+}: CornerLayerProps) {
   if (width <= 0 || height <= 0) {
     return null;
   }
@@ -34,8 +44,30 @@ export function CornerLayer({ corner, width, height, scrollOffsetX, scrollOffset
     transform: `translate3d(${scrollOffsetX ?? 0}px, ${scrollOffsetY ?? 0}px, 0)`,
   };
 
+  const layerRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    const layer = layerRef.current;
+    const viewport = viewportRef?.current;
+    if (!layer || !viewport) {
+      return;
+    }
+
+    const syncTransform = () => {
+      layer.style.transform = `translate3d(${viewport.scrollLeft}px, ${viewport.scrollTop}px, 0)`;
+    };
+
+    syncTransform();
+    viewport.addEventListener('scroll', syncTransform, { passive: true });
+
+    return () => {
+      viewport.removeEventListener('scroll', syncTransform);
+    };
+  }, [viewportRef]);
+
   return (
     <div
+      ref={layerRef}
       data-virtual-layer={`corner-${corner}`}
       style={style}
     >
