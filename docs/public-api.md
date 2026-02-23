@@ -64,6 +64,7 @@ export function VirtualList<T>(props: VirtualListProps<T>): JSX.Element;
 ```
 
 SSR fallback:
+
 - На сервере рендерятся первые `ssr.count` элементов (без доступа к DOM).
 - После гидрации происходит переход в режим измерений/виртуализации.
 - `ssr.count` считается от начала списка и включает sticky-top элементы.
@@ -123,7 +124,9 @@ type StickyGridConfig = {
 
   /** Опциональные рендеры, если нужно отдельно управлять слоями */
   renderTopStickyRow?: (args: { rowIndex: number }) => React.ReactNode;
+  renderBottomStickyRow?: (args: { rowIndex: number }) => React.ReactNode;
   renderLeftStickyColumn?: (args: { columnIndex: number }) => React.ReactNode;
+  renderRightStickyColumn?: (args: { columnIndex: number }) => React.ReactNode;
   renderCorner?: (args: { corner: 'tl' | 'tr' | 'bl' | 'br' }) => React.ReactNode;
 };
 
@@ -153,6 +156,7 @@ export function VirtualGrid(props: VirtualGridProps<unknown>): JSX.Element;
 ```
 
 SSR fallback:
+
 - На сервере рендерится `ssr.rows` x `ssr.columns` ячеек (без доступа к DOM).
 - После гидрации происходит переход в режим измерений/виртуализации.
 - `ssr.rows` и `ssr.columns` считаются от начала осей и включают sticky-top/left зоны.
@@ -309,6 +313,8 @@ export function useVirtualGrid(args: {
   measureColumnElement?: (columnIndex: number, el: HTMLElement | null) => void;
 };
 ```
+
+Примечание по sticky + dynamic: в текущей реализации размеры sticky-зон рассчитываются по `itemSize`/`estimatedItemSize`; отдельные sticky-элементы не измеряются автоматически через `ResizeObserver`.
 
 ---
 

@@ -116,8 +116,14 @@ describe('VirtualGrid integration', () => {
     });
 
     const bodyLayer = container.querySelector('[data-virtual-layer="body"]') as HTMLElement;
-    expect(bodyLayer?.style.paddingTop).toBe('20px');
-    expect(bodyLayer?.style.paddingLeft).toBe('30px');
+    expect(bodyLayer?.style.height).toBe('60px');
+    expect(bodyLayer?.style.width).toBe('90px');
+    expect(bodyLayer?.style.paddingTop).toBe('');
+    expect(bodyLayer?.style.paddingLeft).toBe('');
+
+    const firstBodyCell = getByTestId('cell-1-1').parentElement as HTMLElement;
+    expect(firstBodyCell.style.top).toBe('20px');
+    expect(firstBodyCell.style.left).toBe('30px');
 
     expect(getByTestId('sticky-top-0')).toBeTruthy();
     expect(getByTestId('sticky-left-0')).toBeTruthy();
@@ -249,8 +255,46 @@ describe('VirtualGrid integration', () => {
 
     const topWrapper = getByTestId('sticky-top-0').parentElement?.parentElement;
     const leftWrapper = getByTestId('sticky-left-0').parentElement?.parentElement;
-    expect(topWrapper?.style.transform).toBe('translate(30px, 40px)');
-    expect(leftWrapper?.style.transform).toBe('translate(30px, 40px)');
+    expect(topWrapper?.parentElement?.style.transform).toBe('translate3d(30px, 40px, 0)');
+    expect(leftWrapper?.parentElement?.style.transform).toBe('translate3d(30px, 40px, 0)');
+  });
+
+  it('renders bottom/right sticky zones in correct order', async () => {
+    const { container, getByTestId } = render(
+      <VirtualGrid
+        rowCount={4}
+        columnCount={4}
+        rows={{ sizeMode: 'fixed', itemSize: 10 }}
+        columns={{ sizeMode: 'fixed', itemSize: 15 }}
+        overscan={0}
+        renderCell={({ rowIndex, columnIndex }) => <div data-testid={`cell-${rowIndex}-${columnIndex}`} />}
+        sticky={{
+          bottom: 2,
+          right: 2,
+          renderBottomStickyRow: ({ rowIndex }) => <div data-testid={`sticky-bottom-${rowIndex}`} />,
+          renderRightStickyColumn: ({ columnIndex }) => <div data-testid={`sticky-right-${columnIndex}`} />,
+        }}
+      />,
+    );
+
+    const viewport = container.firstElementChild as HTMLElement;
+    setupViewport(viewport);
+    setClientSize(viewport, { width: 120, height: 60 });
+    await flushEffects();
+
+    act(() => {
+      triggerResize(viewport, { width: 120, height: 60 });
+    });
+
+    const bottomLastWrapper = getByTestId('sticky-bottom-3').parentElement?.parentElement;
+    const bottomPrevWrapper = getByTestId('sticky-bottom-2').parentElement?.parentElement;
+    expect(bottomLastWrapper?.style.bottom).toBe('0px');
+    expect(bottomPrevWrapper?.style.bottom).toBe('10px');
+
+    const rightLastWrapper = getByTestId('sticky-right-3').parentElement?.parentElement;
+    const rightPrevWrapper = getByTestId('sticky-right-2').parentElement?.parentElement;
+    expect(rightLastWrapper?.style.right).toBe('0px');
+    expect(rightPrevWrapper?.style.right).toBe('15px');
   });
 
   it('skips dynamic scroll when allowEstimate is false', async () => {

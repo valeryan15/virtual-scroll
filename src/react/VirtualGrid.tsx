@@ -25,11 +25,12 @@ const buildStickyOffsets = (
   startIndex: number,
   count: number,
   sizeForIndex: (index: number) => number,
+  direction: 'start' | 'end' = 'start',
 ) => {
   const result: { index: number; offset: number; size: number }[] = [];
   let offset = 0;
   for (let step = 0; step < count; step += 1) {
-    const index = startIndex + step;
+    const index = direction === 'start' ? startIndex + step : startIndex + count - 1 - step;
     const size = sizeForIndex(index);
     result.push({ index, offset, size });
     offset += size;
@@ -73,16 +74,16 @@ function VirtualGridInner(props: VirtualGridProps, ref: Ref<VirtualGridHandle>) 
   );
 
   const renderTopStickyRow = sticky?.renderTopStickyRow;
+  const renderBottomStickyRow = sticky?.renderBottomStickyRow ?? renderTopStickyRow;
   const renderLeftStickyColumn = sticky?.renderLeftStickyColumn;
+  const renderRightStickyColumn = sticky?.renderRightStickyColumn ?? renderLeftStickyColumn;
   const renderCorner = sticky?.renderCorner;
 
   // Sticky-количества ограничиваем доступными строками/колонками, чтобы избежать пересечений.
   const topCount = renderTopStickyRow ? Math.min(sticky?.top ?? 0, rowCount) : 0;
-  const bottomCount = renderTopStickyRow ? Math.min(sticky?.bottom ?? 0, rowCount - topCount) : 0;
+  const bottomCount = renderBottomStickyRow ? Math.min(sticky?.bottom ?? 0, rowCount - topCount) : 0;
   const leftCount = renderLeftStickyColumn ? Math.min(sticky?.left ?? 0, columnCount) : 0;
-  const rightCount = renderLeftStickyColumn
-    ? Math.min(sticky?.right ?? 0, columnCount - leftCount)
-    : 0;
+  const rightCount = renderRightStickyColumn ? Math.min(sticky?.right ?? 0, columnCount - leftCount) : 0;
   const bodyRowCount = Math.max(0, rowCount - topCount - bottomCount);
   const bodyColumnCount = Math.max(0, columnCount - leftCount - rightCount);
   const ssrBodyRows = Math.max(0, Math.min(bodyRowCount, (ssr?.rows ?? 0) - topCount));
@@ -94,12 +95,12 @@ function VirtualGridInner(props: VirtualGridProps, ref: Ref<VirtualGridHandle>) 
   // Sticky-offsets считаем от начала/конца, суммируя фиксированные/оценочные размеры.
   const topRows = useMemo(() => buildStickyOffsets(0, topCount, rowSize), [rowSize, topCount]);
   const bottomRows = useMemo(
-    () => buildStickyOffsets(rowCount - bottomCount, bottomCount, rowSize),
+    () => buildStickyOffsets(rowCount - bottomCount, bottomCount, rowSize, 'end'),
     [bottomCount, rowCount, rowSize],
   );
   const leftColumns = useMemo(() => buildStickyOffsets(0, leftCount, columnSize), [columnSize, leftCount]);
   const rightColumns = useMemo(
-    () => buildStickyOffsets(columnCount - rightCount, rightCount, columnSize),
+    () => buildStickyOffsets(columnCount - rightCount, rightCount, columnSize, 'end'),
     [columnCount, columnSize, rightCount],
   );
 
@@ -257,12 +258,6 @@ function VirtualGridInner(props: VirtualGridProps, ref: Ref<VirtualGridHandle>) 
       position: 'relative',
       width: totalWidth + leftWidth + rightWidth,
       height: totalHeight + topHeight + bottomHeight,
-      // Резервируем место под верхние/левые sticky-регионы, чтобы body начинался после них.
-      paddingTop: topHeight,
-      paddingBottom: bottomHeight,
-      paddingLeft: leftWidth,
-      paddingRight: rightWidth,
-      boxSizing: 'border-box',
     }),
     [bottomHeight, leftWidth, rightWidth, topHeight, totalHeight, totalWidth],
   );
@@ -271,7 +266,11 @@ function VirtualGridInner(props: VirtualGridProps, ref: Ref<VirtualGridHandle>) 
   const shouldMeasureColumn = (rowIndex: number) => rowIndex === range.rows.start;
 
   return (
-    <div ref={setViewportRef} className={className} style={viewportStyle}>
+    <div
+      ref={setViewportRef}
+      className={className}
+      style={viewportStyle}
+    >
       <VirtualBodyLayer style={contentStyle}>
         {cells.map((cell) => {
           const actualRowIndex = cell.rowIndex + topCount;
@@ -294,8 +293,8 @@ function VirtualGridInner(props: VirtualGridProps, ref: Ref<VirtualGridHandle>) 
               ref={setRef}
               style={{
                 position: 'absolute',
-                top: cell.y,
-                left: cell.x,
+                top: topHeight + cell.y,
+                left: leftWidth + cell.x,
                 width: cell.width,
                 height: cell.height,
               }}
@@ -308,47 +307,47 @@ function VirtualGridInner(props: VirtualGridProps, ref: Ref<VirtualGridHandle>) 
 
       {renderTopStickyRow && topRows.length > 0 && (
         <StickyLayer
-          orientation="row"
-          position="start"
+          orientation='row'
+          position='start'
           items={topRows}
           scrollOffsetX={currentScrollLeft}
           scrollOffsetY={currentScrollTop}
           render={({ index }) => renderTopStickyRow({ rowIndex: index })}
         />
       )}
-      {renderTopStickyRow && bottomRows.length > 0 && (
+      {renderBottomStickyRow && bottomRows.length > 0 && (
         <StickyLayer
-          orientation="row"
-          position="end"
+          orientation='row'
+          position='end'
           items={bottomRows}
           scrollOffsetX={currentScrollLeft}
           scrollOffsetY={currentScrollTop}
-          render={({ index }) => renderTopStickyRow({ rowIndex: index })}
+          render={({ index }) => renderBottomStickyRow({ rowIndex: index })}
         />
       )}
       {renderLeftStickyColumn && leftColumns.length > 0 && (
         <StickyLayer
-          orientation="column"
-          position="start"
+          orientation='column'
+          position='start'
           items={leftColumns}
           scrollOffsetX={currentScrollLeft}
           scrollOffsetY={currentScrollTop}
           render={({ index }) => renderLeftStickyColumn({ columnIndex: index })}
         />
       )}
-      {renderLeftStickyColumn && rightColumns.length > 0 && (
+      {renderRightStickyColumn && rightColumns.length > 0 && (
         <StickyLayer
-          orientation="column"
-          position="end"
+          orientation='column'
+          position='end'
           items={rightColumns}
           scrollOffsetX={currentScrollLeft}
           scrollOffsetY={currentScrollTop}
-          render={({ index }) => renderLeftStickyColumn({ columnIndex: index })}
+          render={({ index }) => renderRightStickyColumn({ columnIndex: index })}
         />
       )}
       {renderCorner && topCount > 0 && leftCount > 0 && (
         <CornerLayer
-          corner="tl"
+          corner='tl'
           width={leftWidth}
           height={topHeight}
           scrollOffsetX={currentScrollLeft}
@@ -358,7 +357,7 @@ function VirtualGridInner(props: VirtualGridProps, ref: Ref<VirtualGridHandle>) 
       )}
       {renderCorner && topCount > 0 && rightCount > 0 && (
         <CornerLayer
-          corner="tr"
+          corner='tr'
           width={rightWidth}
           height={topHeight}
           scrollOffsetX={currentScrollLeft}
@@ -368,7 +367,7 @@ function VirtualGridInner(props: VirtualGridProps, ref: Ref<VirtualGridHandle>) 
       )}
       {renderCorner && bottomCount > 0 && leftCount > 0 && (
         <CornerLayer
-          corner="bl"
+          corner='bl'
           width={leftWidth}
           height={bottomHeight}
           scrollOffsetX={currentScrollLeft}
@@ -378,7 +377,7 @@ function VirtualGridInner(props: VirtualGridProps, ref: Ref<VirtualGridHandle>) 
       )}
       {renderCorner && bottomCount > 0 && rightCount > 0 && (
         <CornerLayer
-          corner="br"
+          corner='br'
           width={rightWidth}
           height={bottomHeight}
           scrollOffsetX={currentScrollLeft}

@@ -127,7 +127,7 @@ export const StickyRowsColumns: Story = {
             </div>
           ),
           renderLeftStickyColumn: ({ columnIndex }) => (
-            <div style={{ ...cellStyle, width: 120, background: '#f6ffed', fontWeight: 600 }}>
+            <div style={{ ...cellStyle, width: 120, height: '100%', background: '#f6ffed', fontWeight: 600 }}>
               {storyText.column(locale, columnIndex + 1)}
             </div>
           ),

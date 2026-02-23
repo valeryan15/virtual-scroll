@@ -108,10 +108,7 @@ export function useVirtualGrid(args: UseVirtualGridArgs): UseVirtualGridResult {
     setIsHydrated(true);
   }, []);
 
-  const rowAxis = useMemo(
-    () => createAxis(rows, rowCount, overscanValue.rows),
-    [rows, rowCount, overscanValue.rows],
-  );
+  const rowAxis = useMemo(() => createAxis(rows, rowCount, overscanValue.rows), [rows, rowCount, overscanValue.rows]);
   const columnAxis = useMemo(
     () => createAxis(columns, columnCount, overscanValue.columns),
     [columns, columnCount, overscanValue.columns],
@@ -137,8 +134,8 @@ export function useVirtualGrid(args: UseVirtualGridArgs): UseVirtualGridResult {
     const rightOffset = (sticky?.right ?? 0) * columnExtent;
     const currentScrollTop = viewportRef.current?.scrollTop ?? scrollPosition.top;
     const currentScrollLeft = viewportRef.current?.scrollLeft ?? scrollPosition.left;
-    const effectiveScrollTop = Math.max(0, currentScrollTop - topOffset);
-    const effectiveScrollLeft = Math.max(0, currentScrollLeft - leftOffset);
+    const effectiveScrollTop = Math.max(0, currentScrollTop);
+    const effectiveScrollLeft = Math.max(0, currentScrollLeft);
     const effectiveHeight = Math.max(0, viewportSize.height - topOffset - bottomOffset);
     const effectiveWidth = Math.max(0, viewportSize.width - leftOffset - rightOffset);
     const rowRange = rowAxis.getRange(effectiveScrollTop, effectiveHeight, overscanValue.rows);
@@ -218,7 +215,7 @@ export function useVirtualGrid(args: UseVirtualGridArgs): UseVirtualGridResult {
       } else if (align === 'nearest') {
         const current = element.scrollTop;
         const end = baseOffset + itemExtent;
-        const effectiveCurrent = Math.max(0, current - topOffset);
+        const effectiveCurrent = Math.max(0, current);
         const viewportEnd = effectiveCurrent + effectiveExtent;
         if (baseOffset >= effectiveCurrent && end <= viewportEnd) {
           return;
@@ -226,7 +223,7 @@ export function useVirtualGrid(args: UseVirtualGridArgs): UseVirtualGridResult {
         targetOffset = baseOffset < effectiveCurrent ? baseOffset : end - effectiveExtent;
       }
 
-      element.scrollTo({ top: Math.max(0, targetOffset + topOffset), behavior: options?.behavior });
+      element.scrollTo({ top: Math.max(0, targetOffset), behavior: options?.behavior });
     },
     [rowExtent, rows, sticky?.bottom, sticky?.top, viewportRef, viewportSize.height],
   );
@@ -248,11 +245,7 @@ export function useVirtualGrid(args: UseVirtualGridArgs): UseVirtualGridResult {
       const axisModel = columnAxisRef.current;
       const safeIndex = Math.min(Math.max(columnIndex, 0), axisModel.count - 1);
       const baseOffset = axisModel.getOffsetByIndex(safeIndex);
-      const itemExtent = getItemSizeFromAxis(
-        axisModel,
-        safeIndex,
-        columns.sizeMode === 'fixed' ? columns.itemSize : 0,
-      );
+      const itemExtent = getItemSizeFromAxis(axisModel, safeIndex, columns.sizeMode === 'fixed' ? columns.itemSize : 0);
       const leftOffset = (sticky?.left ?? 0) * columnExtent;
       const rightOffset = (sticky?.right ?? 0) * columnExtent;
       const viewportExtent = viewportSize.width;
@@ -267,7 +260,7 @@ export function useVirtualGrid(args: UseVirtualGridArgs): UseVirtualGridResult {
       } else if (align === 'nearest') {
         const current = element.scrollLeft;
         const end = baseOffset + itemExtent;
-        const effectiveCurrent = Math.max(0, current - leftOffset);
+        const effectiveCurrent = Math.max(0, current);
         const viewportEnd = effectiveCurrent + effectiveExtent;
         if (baseOffset >= effectiveCurrent && end <= viewportEnd) {
           return;
@@ -275,7 +268,7 @@ export function useVirtualGrid(args: UseVirtualGridArgs): UseVirtualGridResult {
         targetOffset = baseOffset < effectiveCurrent ? baseOffset : end - effectiveExtent;
       }
 
-      element.scrollTo({ left: Math.max(0, targetOffset + leftOffset), behavior: options?.behavior });
+      element.scrollTo({ left: Math.max(0, targetOffset), behavior: options?.behavior });
     },
     [columnExtent, columns, sticky?.left, sticky?.right, viewportRef, viewportSize.width],
   );
@@ -285,8 +278,7 @@ export function useVirtualGrid(args: UseVirtualGridArgs): UseVirtualGridResult {
       if (options?.allowEstimate === false) {
         const currentRange = rangeRef.current;
         const rowAllowed =
-          rows.sizeMode === 'fixed' ||
-          (rowIndex >= currentRange.rows.start && rowIndex < currentRange.rows.end);
+          rows.sizeMode === 'fixed' || (rowIndex >= currentRange.rows.start && rowIndex < currentRange.rows.end);
         const columnAllowed =
           columns.sizeMode === 'fixed' ||
           (columnIndex >= currentRange.columns.start && columnIndex < currentRange.columns.end);
@@ -352,8 +344,7 @@ export function useVirtualGrid(args: UseVirtualGridArgs): UseVirtualGridResult {
         }
 
         const currentScrollOffset = viewportRef.current?.scrollTop ?? scrollTopRef.current;
-        const topOffset = (sticky?.top ?? 0) * rowExtent;
-        const effectiveScrollOffset = Math.max(0, currentScrollOffset - topOffset);
+        const effectiveScrollOffset = Math.max(0, currentScrollOffset);
         const anchor = anchorManager.capture({
           scrollOffset: effectiveScrollOffset,
           rangeStart: rangeRef.current.rows.start,
@@ -372,7 +363,7 @@ export function useVirtualGrid(args: UseVirtualGridArgs): UseVirtualGridResult {
             count: axisModel.count,
             getOffsetByIndex: axisModel.getOffsetByIndex,
           });
-          const finalOffset = nextOffset + topOffset;
+          const finalOffset = nextOffset;
           if (Math.abs(element.scrollTop - finalOffset) > 0.5) {
             element.scrollTop = finalOffset;
           }
@@ -439,8 +430,7 @@ export function useVirtualGrid(args: UseVirtualGridArgs): UseVirtualGridResult {
         }
 
         const currentScrollOffset = viewportRef.current?.scrollLeft ?? scrollLeftRef.current;
-        const leftOffset = (sticky?.left ?? 0) * columnExtent;
-        const effectiveScrollOffset = Math.max(0, currentScrollOffset - leftOffset);
+        const effectiveScrollOffset = Math.max(0, currentScrollOffset);
         const anchor = anchorManager.capture({
           scrollOffset: effectiveScrollOffset,
           rangeStart: rangeRef.current.columns.start,
@@ -459,7 +449,7 @@ export function useVirtualGrid(args: UseVirtualGridArgs): UseVirtualGridResult {
             count: axisModel.count,
             getOffsetByIndex: axisModel.getOffsetByIndex,
           });
-          const finalOffset = nextOffset + leftOffset;
+          const finalOffset = nextOffset;
           if (Math.abs(element.scrollLeft - finalOffset) > 0.5) {
             element.scrollLeft = finalOffset;
           }
@@ -539,8 +529,7 @@ export function useVirtualGrid(args: UseVirtualGridArgs): UseVirtualGridResult {
       const state = rowMeasurementRef.current;
       if (state && 'setSize' in rowAxisModel && typeof rowAxisModel.setSize === 'function') {
         const currentScrollOffset = viewportRef.current?.scrollTop ?? scrollTopRef.current;
-        const topOffset = (sticky?.top ?? 0) * rowExtent;
-        const effectiveScrollOffset = Math.max(0, currentScrollOffset - topOffset);
+        const effectiveScrollOffset = Math.max(0, currentScrollOffset);
         const anchor = anchorManager.capture({
           scrollOffset: effectiveScrollOffset,
           rangeStart: rangeRef.current.rows.start,
@@ -560,7 +549,7 @@ export function useVirtualGrid(args: UseVirtualGridArgs): UseVirtualGridResult {
             count: rowAxisModel.count,
             getOffsetByIndex: rowAxisModel.getOffsetByIndex,
           });
-          const finalOffset = nextOffset + topOffset;
+          const finalOffset = nextOffset;
           if (Math.abs(viewportElement.scrollTop - finalOffset) > 0.5) {
             viewportElement.scrollTop = finalOffset;
           }
@@ -572,8 +561,7 @@ export function useVirtualGrid(args: UseVirtualGridArgs): UseVirtualGridResult {
       const state = columnMeasurementRef.current;
       if (state && 'setSize' in columnAxisModel && typeof columnAxisModel.setSize === 'function') {
         const currentScrollOffset = viewportRef.current?.scrollLeft ?? scrollLeftRef.current;
-        const leftOffset = (sticky?.left ?? 0) * columnExtent;
-        const effectiveScrollOffset = Math.max(0, currentScrollOffset - leftOffset);
+        const effectiveScrollOffset = Math.max(0, currentScrollOffset);
         const anchor = anchorManager.capture({
           scrollOffset: effectiveScrollOffset,
           rangeStart: rangeRef.current.columns.start,
@@ -593,7 +581,7 @@ export function useVirtualGrid(args: UseVirtualGridArgs): UseVirtualGridResult {
             count: columnAxisModel.count,
             getOffsetByIndex: columnAxisModel.getOffsetByIndex,
           });
-          const finalOffset = nextOffset + leftOffset;
+          const finalOffset = nextOffset;
           if (Math.abs(viewportElement.scrollLeft - finalOffset) > 0.5) {
             viewportElement.scrollLeft = finalOffset;
           }
@@ -602,16 +590,7 @@ export function useVirtualGrid(args: UseVirtualGridArgs): UseVirtualGridResult {
     }
 
     setMeasureVersion((value) => value + 1);
-  }, [
-    anchorManager,
-    columnExtent,
-    columns.sizeMode,
-    rowExtent,
-    rows.sizeMode,
-    sticky?.left,
-    sticky?.top,
-    viewportRef,
-  ]);
+  }, [anchorManager, columnExtent, columns.sizeMode, rowExtent, rows.sizeMode, sticky?.left, sticky?.top, viewportRef]);
 
   const cells = useMemo(() => {
     const result: VirtualCell[] = [];
@@ -620,11 +599,7 @@ export function useVirtualGrid(args: UseVirtualGridArgs): UseVirtualGridResult {
       const height = getItemSizeFromAxis(rowAxis, rowIndex, rows.sizeMode === 'fixed' ? rows.itemSize : 0);
       for (let columnIndex = range.columns.start; columnIndex < range.columns.end; columnIndex += 1) {
         const x = columnAxis.getOffsetByIndex(columnIndex);
-        const width = getItemSizeFromAxis(
-          columnAxis,
-          columnIndex,
-          columns.sizeMode === 'fixed' ? columns.itemSize : 0,
-        );
+        const width = getItemSizeFromAxis(columnAxis, columnIndex, columns.sizeMode === 'fixed' ? columns.itemSize : 0);
         result.push({
           rowIndex,
           columnIndex,
