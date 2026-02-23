@@ -18,6 +18,22 @@ React + TypeScript библиотека для рендеринга больши
 
 ## Установка
 
+### Установка пакета из npm
+
+```bash
+npm install @valeryan15/virtual-scroll
+```
+
+или
+
+```bash
+yarn add @valeryan15/virtual-scroll
+```
+
+Страница пакета: `https://www.npmjs.com/package/@valeryan15/virtual-scroll`
+
+### Установка проекта для локальной разработки
+
 ```bash
 nvm use
 yarn install
