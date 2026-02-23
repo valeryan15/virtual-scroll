@@ -24,7 +24,7 @@ type UseVirtualListArgs = {
   itemSize?: number;
   estimatedItemSize?: number;
   overscan?: Overscan1D;
-  sticky?: { top?: number; bottom?: number };
+  sticky?: { top?: number; bottom?: number; topOffset?: number; bottomOffset?: number };
   ssr?: { count?: number };
   onRangeChange?: (range: { start: number; end: number }) => void;
 };
@@ -109,8 +109,8 @@ export function useVirtualList(args: UseVirtualListArgs): UseVirtualListResult {
       return { start: 0, end: ssrCount, offset: 0 };
     }
     const stickyExtent = sizeMode === 'fixed' ? (itemSize ?? 0) : (estimatedItemSize ?? 0);
-    const startOffset = direction === 'vertical' ? (sticky?.top ?? 0) * stickyExtent : 0;
-    const endOffset = direction === 'vertical' ? (sticky?.bottom ?? 0) * stickyExtent : 0;
+    const startOffset = direction === 'vertical' ? (sticky?.topOffset ?? (sticky?.top ?? 0) * stickyExtent) : 0;
+    const endOffset = direction === 'vertical' ? (sticky?.bottomOffset ?? (sticky?.bottom ?? 0) * stickyExtent) : 0;
     const currentScrollOffset =
       direction === 'horizontal'
         ? (viewportRef.current?.scrollLeft ?? scrollPosition.left)
@@ -128,7 +128,9 @@ export function useVirtualList(args: UseVirtualListArgs): UseVirtualListResult {
     scrollPosition.left,
     scrollPosition.top,
     sticky?.bottom,
+    sticky?.bottomOffset,
     sticky?.top,
+    sticky?.topOffset,
     viewportRef,
     viewportSize.height,
     viewportSize.width,
@@ -170,8 +172,8 @@ export function useVirtualList(args: UseVirtualListArgs): UseVirtualListResult {
       const baseOffset = axisModel.getOffsetByIndex(safeIndex);
       const itemExtent = getItemSizeFromAxis(axisModel, safeIndex, itemSize ?? 0);
       const stickyExtent = sizeMode === 'fixed' ? (itemSize ?? 0) : (estimatedItemSize ?? 0);
-      const startOffset = direction === 'vertical' ? (sticky?.top ?? 0) * stickyExtent : 0;
-      const endOffset = direction === 'vertical' ? (sticky?.bottom ?? 0) * stickyExtent : 0;
+      const startOffset = direction === 'vertical' ? (sticky?.topOffset ?? (sticky?.top ?? 0) * stickyExtent) : 0;
+      const endOffset = direction === 'vertical' ? (sticky?.bottomOffset ?? (sticky?.bottom ?? 0) * stickyExtent) : 0;
       const viewportExtent = direction === 'horizontal' ? viewportSize.width : viewportSize.height;
       const effectiveExtent = Math.max(0, viewportExtent - startOffset - endOffset);
       const align = options?.align ?? 'start';
@@ -205,7 +207,9 @@ export function useVirtualList(args: UseVirtualListArgs): UseVirtualListResult {
       itemSize,
       sizeMode,
       sticky?.bottom,
+      sticky?.bottomOffset,
       sticky?.top,
+      sticky?.topOffset,
       viewportRef,
       viewportSize.height,
       viewportSize.width,

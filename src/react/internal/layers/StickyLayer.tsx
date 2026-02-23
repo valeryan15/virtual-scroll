@@ -1,4 +1,6 @@
+import { useCallback, useRef } from 'react';
 import type { CSSProperties, ReactNode } from 'react';
+import { useResizeObserver } from '../../hooks/useResizeObserver';
 
 export type StickyItem = {
   index: number;
@@ -13,6 +15,7 @@ type StickyLayerProps = {
   scrollOffsetX: number;
   scrollOffsetY: number;
   render: (args: { index: number }) => ReactNode;
+  onMeasureItem?: (args: { index: number; size: number }) => void;
 };
 
 const baseLayerStyle: CSSProperties = {
@@ -23,7 +26,15 @@ const baseLayerStyle: CSSProperties = {
   willChange: 'transform',
 };
 
-export function StickyLayer({ orientation, position, items, scrollOffsetX, scrollOffsetY, render }: StickyLayerProps) {
+export function StickyLayer({
+  orientation,
+  position,
+  items,
+  scrollOffsetX,
+  scrollOffsetY,
+  render,
+  onMeasureItem,
+}: StickyLayerProps) {
   if (items.length === 0) {
     return null;
   }
@@ -33,6 +44,16 @@ export function StickyLayer({ orientation, position, items, scrollOffsetX, scrol
     ...baseLayerStyle,
     transform: `translate3d(${scrollOffsetX}px, ${scrollOffsetY}px, 0)`,
   };
+
+  const measureItem = useCallback(
+    (index: number, size: number) => {
+      if (!onMeasureItem) {
+        return;
+      }
+      onMeasureItem({ index, size: Math.max(0, size) });
+    },
+    [onMeasureItem],
+  );
 
   return (
     <div
@@ -45,26 +66,65 @@ export function StickyLayer({ orientation, position, items, scrollOffsetX, scrol
               position: 'absolute',
               left: 0,
               right: 0,
-              height: item.size,
+              ...(onMeasureItem ? { minHeight: item.size } : { height: item.size }),
               [position === 'start' ? 'top' : 'bottom']: item.offset,
             }
           : {
               position: 'absolute',
               top: 0,
               bottom: 0,
-              width: item.size,
+              ...(onMeasureItem ? { minWidth: item.size } : { width: item.size }),
               [position === 'start' ? 'left' : 'right']: item.offset,
             };
 
         return (
-          <div
+          <StickyLayerItem
             key={`${position}-${item.index}`}
+            index={item.index}
+            isRow={isRow}
             style={itemStyle}
+            measure={measureItem}
           >
-            <div style={{ pointerEvents: 'auto', height: '100%' }}>{render({ index: item.index })}</div>
-          </div>
+            {render({ index: item.index })}
+          </StickyLayerItem>
         );
       })}
+    </div>
+  );
+}
+
+type StickyLayerItemProps = {
+  index: number;
+  isRow: boolean;
+  style: CSSProperties;
+  children: ReactNode;
+  measure: (index: number, size: number) => void;
+};
+
+function StickyLayerItem({ index, isRow, style, children, measure }: StickyLayerItemProps) {
+  const itemRef = useRef<HTMLDivElement | null>(null);
+
+  useResizeObserver(itemRef, (entry) => {
+    measure(index, isRow ? entry.contentRect.height : entry.contentRect.width);
+  });
+
+  const setItemRef = useCallback(
+    (element: HTMLDivElement | null) => {
+      itemRef.current = element;
+      if (element) {
+        const rect = element.getBoundingClientRect();
+        measure(index, isRow ? rect.height : rect.width);
+      }
+    },
+    [index, isRow, measure],
+  );
+
+  return (
+    <div
+      ref={setItemRef}
+      style={style}
+    >
+      <div style={{ pointerEvents: 'auto', ...(isRow ? { minHeight: '100%' } : { minWidth: '100%' }) }}>{children}</div>
     </div>
   );
 }

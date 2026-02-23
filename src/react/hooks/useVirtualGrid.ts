@@ -25,7 +25,16 @@ type UseVirtualGridArgs = {
   rows: AxisConfig;
   columns: AxisConfig;
   overscan?: GridOverscan;
-  sticky?: { top?: number; bottom?: number; left?: number; right?: number };
+  sticky?: {
+    top?: number;
+    bottom?: number;
+    left?: number;
+    right?: number;
+    topOffset?: number;
+    bottomOffset?: number;
+    leftOffset?: number;
+    rightOffset?: number;
+  };
   ssr?: { rows?: number; columns?: number };
   onRangeChange?: (range: GridRange) => void;
 };
@@ -128,10 +137,10 @@ export function useVirtualGrid(args: UseVirtualGridArgs): UseVirtualGridResult {
         columns: { start: 0, end: ssrColumnCount },
       };
     }
-    const topOffset = (sticky?.top ?? 0) * rowExtent;
-    const bottomOffset = (sticky?.bottom ?? 0) * rowExtent;
-    const leftOffset = (sticky?.left ?? 0) * columnExtent;
-    const rightOffset = (sticky?.right ?? 0) * columnExtent;
+    const topOffset = sticky?.topOffset ?? (sticky?.top ?? 0) * rowExtent;
+    const bottomOffset = sticky?.bottomOffset ?? (sticky?.bottom ?? 0) * rowExtent;
+    const leftOffset = sticky?.leftOffset ?? (sticky?.left ?? 0) * columnExtent;
+    const rightOffset = sticky?.rightOffset ?? (sticky?.right ?? 0) * columnExtent;
     const currentScrollTop = viewportRef.current?.scrollTop ?? scrollPosition.top;
     const currentScrollLeft = viewportRef.current?.scrollLeft ?? scrollPosition.left;
     const effectiveScrollTop = Math.max(0, currentScrollTop);
@@ -154,9 +163,13 @@ export function useVirtualGrid(args: UseVirtualGridArgs): UseVirtualGridResult {
     scrollPosition.left,
     scrollPosition.top,
     sticky?.bottom,
+    sticky?.bottomOffset,
     sticky?.left,
+    sticky?.leftOffset,
     sticky?.right,
+    sticky?.rightOffset,
     sticky?.top,
+    sticky?.topOffset,
     viewportRef,
     viewportSize.height,
     viewportSize.width,
@@ -201,8 +214,8 @@ export function useVirtualGrid(args: UseVirtualGridArgs): UseVirtualGridResult {
       const safeIndex = Math.min(Math.max(rowIndex, 0), axisModel.count - 1);
       const baseOffset = axisModel.getOffsetByIndex(safeIndex);
       const itemExtent = getItemSizeFromAxis(axisModel, safeIndex, rows.sizeMode === 'fixed' ? rows.itemSize : 0);
-      const topOffset = (sticky?.top ?? 0) * rowExtent;
-      const bottomOffset = (sticky?.bottom ?? 0) * rowExtent;
+      const topOffset = sticky?.topOffset ?? (sticky?.top ?? 0) * rowExtent;
+      const bottomOffset = sticky?.bottomOffset ?? (sticky?.bottom ?? 0) * rowExtent;
       const viewportExtent = viewportSize.height;
       const effectiveExtent = Math.max(0, viewportExtent - topOffset - bottomOffset);
       const align = options?.align ?? 'start';
@@ -225,7 +238,16 @@ export function useVirtualGrid(args: UseVirtualGridArgs): UseVirtualGridResult {
 
       element.scrollTo({ top: Math.max(0, targetOffset), behavior: options?.behavior });
     },
-    [rowExtent, rows, sticky?.bottom, sticky?.top, viewportRef, viewportSize.height],
+    [
+      rowExtent,
+      rows,
+      sticky?.bottom,
+      sticky?.bottomOffset,
+      sticky?.top,
+      sticky?.topOffset,
+      viewportRef,
+      viewportSize.height,
+    ],
   );
 
   const scrollToColumn = useCallback(
@@ -246,8 +268,8 @@ export function useVirtualGrid(args: UseVirtualGridArgs): UseVirtualGridResult {
       const safeIndex = Math.min(Math.max(columnIndex, 0), axisModel.count - 1);
       const baseOffset = axisModel.getOffsetByIndex(safeIndex);
       const itemExtent = getItemSizeFromAxis(axisModel, safeIndex, columns.sizeMode === 'fixed' ? columns.itemSize : 0);
-      const leftOffset = (sticky?.left ?? 0) * columnExtent;
-      const rightOffset = (sticky?.right ?? 0) * columnExtent;
+      const leftOffset = sticky?.leftOffset ?? (sticky?.left ?? 0) * columnExtent;
+      const rightOffset = sticky?.rightOffset ?? (sticky?.right ?? 0) * columnExtent;
       const viewportExtent = viewportSize.width;
       const effectiveExtent = Math.max(0, viewportExtent - leftOffset - rightOffset);
       const align = options?.align ?? 'start';
@@ -270,7 +292,16 @@ export function useVirtualGrid(args: UseVirtualGridArgs): UseVirtualGridResult {
 
       element.scrollTo({ left: Math.max(0, targetOffset), behavior: options?.behavior });
     },
-    [columnExtent, columns, sticky?.left, sticky?.right, viewportRef, viewportSize.width],
+    [
+      columnExtent,
+      columns,
+      sticky?.left,
+      sticky?.leftOffset,
+      sticky?.right,
+      sticky?.rightOffset,
+      viewportRef,
+      viewportSize.width,
+    ],
   );
 
   const scrollToCell = useCallback(
