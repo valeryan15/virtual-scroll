@@ -1,5 +1,5 @@
 {
-  "name": "virtual-scroll",
+  "name": "@valeryan15/virtual-scroll",
   "version": "0.1.1",
   "description": "Virtual scroll React component library",
   "license": "MIT",

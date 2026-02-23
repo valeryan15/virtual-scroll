@@ -1,4 +1,4 @@
-# virtual-scroll
+# @valeryan15/virtual-scroll
 
 ## 0.1.1
 
