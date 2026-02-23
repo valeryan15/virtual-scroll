@@ -1,5 +1,6 @@
-import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef } from 'react';
+import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
 import type { CSSProperties, MutableRefObject, Ref, RefObject, ReactElement } from 'react';
+import { useResizeObserver } from './hooks/useResizeObserver';
 import { useScrollPosition } from './hooks/useScrollPosition';
 import { useVirtualList } from './hooks/useVirtualList';
 import { StickyListLayer } from './internal/layers/StickyListLayer';
@@ -49,13 +50,65 @@ function VirtualListInner<T>(props: VirtualListProps<T>, ref: Ref<VirtualListHan
   const maxBottomCount = Math.min(sticky?.bottom ?? 0, items.length - topCount);
   const bottomCount = renderStickyBottom ? maxBottomCount : 0;
   const bodyCount = Math.max(0, items.length - topCount - bottomCount);
-  // SSR-количество включает sticky-элементы в начале, поэтому уменьшаем на topCount для body.
   const ssrBodyCount = Math.max(0, Math.min(bodyCount, (ssr?.count ?? 0) - topCount));
-  // Размеры sticky считаем по фиксированному размеру (или estimated в dynamic),
-  // так как sticky-элементы не участвуют в измерениях виртуализированного body.
   const itemExtent = sizeMode === 'fixed' ? (itemSize ?? 0) : (estimatedItemSize ?? 0);
-  const stickyTopSize = isVertical ? topCount * itemExtent : 0;
-  const stickyBottomSize = isVertical ? bottomCount * itemExtent : 0;
+  const estimatedStickyTopSize = isVertical ? topCount * itemExtent : 0;
+  const estimatedStickyBottomSize = isVertical ? bottomCount * itemExtent : 0;
+  const [measuredStickySize, setMeasuredStickySize] = useState({
+    top: estimatedStickyTopSize,
+    bottom: estimatedStickyBottomSize,
+  });
+  const stickyTopContentRef = useRef<HTMLDivElement | null>(null);
+  const stickyBottomContentRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    setMeasuredStickySize({
+      top: estimatedStickyTopSize,
+      bottom: estimatedStickyBottomSize,
+    });
+  }, [estimatedStickyBottomSize, estimatedStickyTopSize]);
+
+  const updateStickySize = useCallback((position: 'top' | 'bottom', nextValue: number) => {
+    const normalizedValue = Math.max(0, nextValue);
+    setMeasuredStickySize((current) => {
+      const currentValue = current[position];
+      if (Math.abs(currentValue - normalizedValue) <= 0.5) {
+        return current;
+      }
+      return { ...current, [position]: normalizedValue };
+    });
+  }, []);
+
+  const setStickyTopContentRef = useCallback(
+    (element: HTMLDivElement | null) => {
+      stickyTopContentRef.current = element;
+      if (element) {
+        updateStickySize('top', element.getBoundingClientRect().height);
+      }
+    },
+    [updateStickySize],
+  );
+
+  const setStickyBottomContentRef = useCallback(
+    (element: HTMLDivElement | null) => {
+      stickyBottomContentRef.current = element;
+      if (element) {
+        updateStickySize('bottom', element.getBoundingClientRect().height);
+      }
+    },
+    [updateStickySize],
+  );
+
+  useResizeObserver(stickyTopContentRef, (entry) => {
+    updateStickySize('top', entry.contentRect.height);
+  });
+
+  useResizeObserver(stickyBottomContentRef, (entry) => {
+    updateStickySize('bottom', entry.contentRect.height);
+  });
+
+  const stickyTopSize = isVertical && sizeMode === 'dynamic' ? measuredStickySize.top : estimatedStickyTopSize;
+  const stickyBottomSize = isVertical && sizeMode === 'dynamic' ? measuredStickySize.bottom : estimatedStickyBottomSize;
 
   const {
     items: virtualItems,
@@ -76,7 +129,12 @@ function VirtualListInner<T>(props: VirtualListProps<T>, ref: Ref<VirtualListHan
     itemSize,
     estimatedItemSize,
     overscan,
-    sticky: { top: topCount, bottom: bottomCount },
+    sticky: {
+      top: topCount,
+      bottom: bottomCount,
+      topOffset: stickyTopSize,
+      bottomOffset: stickyBottomSize,
+    },
     ssr: ssrBodyCount > 0 ? { count: ssrBodyCount } : undefined,
     onRangeChange: (rangeValue) =>
       onRangeChange?.({
@@ -197,9 +255,11 @@ function VirtualListInner<T>(props: VirtualListProps<T>, ref: Ref<VirtualListHan
       {renderStickyTop && stickyTopItems.length > 0 && (
         <StickyListLayer
           position='top'
-          size={stickyTopSize}
+          size={sizeMode === 'dynamic' ? undefined : stickyTopSize}
           scrollOffsetX={viewportRef.current?.scrollLeft ?? scrollPosition.left}
           scrollOffsetY={currentScrollTop}
+          contentRef={setStickyTopContentRef}
+          viewportRef={viewportRef}
         >
           {renderStickyTop({ items: stickyTopItems })}
         </StickyListLayer>
@@ -207,9 +267,11 @@ function VirtualListInner<T>(props: VirtualListProps<T>, ref: Ref<VirtualListHan
       {renderStickyBottom && stickyBottomItems.length > 0 && (
         <StickyListLayer
           position='bottom'
-          size={stickyBottomSize}
+          size={sizeMode === 'dynamic' ? undefined : stickyBottomSize}
           scrollOffsetX={viewportRef.current?.scrollLeft ?? scrollPosition.left}
           scrollOffsetY={currentScrollTop}
+          contentRef={setStickyBottomContentRef}
+          viewportRef={viewportRef}
         >
           {renderStickyBottom({ items: stickyBottomItems })}
         </StickyListLayer>

@@ -1,24 +1,16 @@
-import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef } from 'react';
+import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
 import type { CSSProperties, MutableRefObject, Ref, RefObject, ReactElement } from 'react';
 import { useScrollPosition } from './hooks/useScrollPosition';
 import { useVirtualGrid } from './hooks/useVirtualGrid';
 import { CornerLayer } from './internal/layers/CornerLayer';
 import { StickyLayer } from './internal/layers/StickyLayer';
 import { VirtualBodyLayer } from './internal/layers/VirtualBodyLayer';
-import type { AxisConfig } from '../shared/types';
 import type { VirtualGridHandle, VirtualGridProps } from './types';
 
 const assignRef = (target: RefObject<HTMLElement | null> | undefined, value: HTMLElement | null) => {
   if (target) {
     (target as MutableRefObject<HTMLElement | null>).current = value;
   }
-};
-
-const getAxisItemSize = (config: AxisConfig, _index: number) => {
-  if (config.sizeMode === 'fixed') {
-    return config.itemSize;
-  }
-  return config.estimatedItemSize;
 };
 
 const buildStickyOffsets = (
@@ -89,26 +81,93 @@ function VirtualGridInner(props: VirtualGridProps, ref: Ref<VirtualGridHandle>) 
   const ssrBodyRows = Math.max(0, Math.min(bodyRowCount, (ssr?.rows ?? 0) - topCount));
   const ssrBodyColumns = Math.max(0, Math.min(bodyColumnCount, (ssr?.columns ?? 0) - leftCount));
 
-  const rowSize = useCallback((index: number) => getAxisItemSize(rows, index), [rows]);
-  const columnSize = useCallback((index: number) => getAxisItemSize(columns, index), [columns]);
+  const [stickyRowSizes, setStickyRowSizes] = useState<Record<number, number>>({});
+  const [stickyColumnSizes, setStickyColumnSizes] = useState<Record<number, number>>({});
+
+  const updateStickyRowSize = useCallback(
+    ({ index, size }: { index: number; size: number }) => {
+      if (rows.sizeMode !== 'dynamic') {
+        return;
+      }
+      const normalizedSize = Math.max(0, size);
+      setStickyRowSizes((current) => {
+        if (Math.abs((current[index] ?? -1) - normalizedSize) <= 0.5) {
+          return current;
+        }
+        return { ...current, [index]: normalizedSize };
+      });
+    },
+    [rows.sizeMode],
+  );
+
+  const updateStickyColumnSize = useCallback(
+    ({ index, size }: { index: number; size: number }) => {
+      if (columns.sizeMode !== 'dynamic') {
+        return;
+      }
+      const normalizedSize = Math.max(0, size);
+      setStickyColumnSizes((current) => {
+        if (Math.abs((current[index] ?? -1) - normalizedSize) <= 0.5) {
+          return current;
+        }
+        return { ...current, [index]: normalizedSize };
+      });
+    },
+    [columns.sizeMode],
+  );
+
+  useEffect(() => {
+    if (rows.sizeMode !== 'dynamic') {
+      setStickyRowSizes({});
+    }
+  }, [rows.sizeMode]);
+
+  useEffect(() => {
+    if (columns.sizeMode !== 'dynamic') {
+      setStickyColumnSizes({});
+    }
+  }, [columns.sizeMode]);
+
+  const resolveRowSize = useCallback(
+    (index: number) => {
+      if (rows.sizeMode === 'dynamic') {
+        return stickyRowSizes[index] ?? rows.estimatedItemSize;
+      }
+      return rows.itemSize;
+    },
+    [rows, stickyRowSizes],
+  );
+
+  const resolveColumnSize = useCallback(
+    (index: number) => {
+      if (columns.sizeMode === 'dynamic') {
+        return stickyColumnSizes[index] ?? columns.estimatedItemSize;
+      }
+      return columns.itemSize;
+    },
+    [columns, stickyColumnSizes],
+  );
 
   // Sticky-offsets считаем от начала/конца, суммируя фиксированные/оценочные размеры.
-  const topRows = useMemo(() => buildStickyOffsets(0, topCount, rowSize), [rowSize, topCount]);
+  const topRows = useMemo(() => buildStickyOffsets(0, topCount, resolveRowSize), [resolveRowSize, topCount]);
   const bottomRows = useMemo(
-    () => buildStickyOffsets(rowCount - bottomCount, bottomCount, rowSize, 'end'),
-    [bottomCount, rowCount, rowSize],
+    () => buildStickyOffsets(rowCount - bottomCount, bottomCount, resolveRowSize, 'end'),
+    [bottomCount, resolveRowSize, rowCount],
   );
-  const leftColumns = useMemo(() => buildStickyOffsets(0, leftCount, columnSize), [columnSize, leftCount]);
+  const leftColumns = useMemo(
+    () => buildStickyOffsets(0, leftCount, resolveColumnSize),
+    [leftCount, resolveColumnSize],
+  );
   const rightColumns = useMemo(
-    () => buildStickyOffsets(columnCount - rightCount, rightCount, columnSize, 'end'),
-    [columnCount, columnSize, rightCount],
+    () => buildStickyOffsets(columnCount - rightCount, rightCount, resolveColumnSize, 'end'),
+    [columnCount, resolveColumnSize, rightCount],
   );
 
   // Sticky-экстенты (px) используются для смещения виртуализированного body viewport.
-  const topHeight = sumAxisSizes(0, topCount, rowSize);
-  const bottomHeight = sumAxisSizes(rowCount - bottomCount, bottomCount, rowSize);
-  const leftWidth = sumAxisSizes(0, leftCount, columnSize);
-  const rightWidth = sumAxisSizes(columnCount - rightCount, rightCount, columnSize);
+  const topHeight = sumAxisSizes(0, topCount, resolveRowSize);
+  const bottomHeight = sumAxisSizes(rowCount - bottomCount, bottomCount, resolveRowSize);
+  const leftWidth = sumAxisSizes(0, leftCount, resolveColumnSize);
+  const rightWidth = sumAxisSizes(columnCount - rightCount, rightCount, resolveColumnSize);
 
   const {
     cells,
@@ -127,7 +186,16 @@ function VirtualGridInner(props: VirtualGridProps, ref: Ref<VirtualGridHandle>) 
     rows,
     columns,
     overscan,
-    sticky: { top: topCount, bottom: bottomCount, left: leftCount, right: rightCount },
+    sticky: {
+      top: topCount,
+      bottom: bottomCount,
+      left: leftCount,
+      right: rightCount,
+      topOffset: topHeight,
+      bottomOffset: bottomHeight,
+      leftOffset: leftWidth,
+      rightOffset: rightWidth,
+    },
     ssr: ssrBodyRows > 0 || ssrBodyColumns > 0 ? { rows: ssrBodyRows, columns: ssrBodyColumns } : undefined,
     onRangeChange: (rangeValue) =>
       onRangeChange?.({
@@ -237,8 +305,10 @@ function VirtualGridInner(props: VirtualGridProps, ref: Ref<VirtualGridHandle>) 
       range.columns.start,
       range.rows.end,
       range.rows.start,
+      rightWidth,
       scrollToBodyColumn,
       scrollToBodyRow,
+      topHeight,
       topCount,
       viewportRef,
     ],
@@ -312,6 +382,8 @@ function VirtualGridInner(props: VirtualGridProps, ref: Ref<VirtualGridHandle>) 
           items={topRows}
           scrollOffsetX={currentScrollLeft}
           scrollOffsetY={currentScrollTop}
+          onMeasureItem={rows.sizeMode === 'dynamic' ? updateStickyRowSize : undefined}
+          viewportRef={viewportRef}
           render={({ index }) => renderTopStickyRow({ rowIndex: index })}
         />
       )}
@@ -322,6 +394,8 @@ function VirtualGridInner(props: VirtualGridProps, ref: Ref<VirtualGridHandle>) 
           items={bottomRows}
           scrollOffsetX={currentScrollLeft}
           scrollOffsetY={currentScrollTop}
+          onMeasureItem={rows.sizeMode === 'dynamic' ? updateStickyRowSize : undefined}
+          viewportRef={viewportRef}
           render={({ index }) => renderBottomStickyRow({ rowIndex: index })}
         />
       )}
@@ -332,6 +406,8 @@ function VirtualGridInner(props: VirtualGridProps, ref: Ref<VirtualGridHandle>) 
           items={leftColumns}
           scrollOffsetX={currentScrollLeft}
           scrollOffsetY={currentScrollTop}
+          onMeasureItem={columns.sizeMode === 'dynamic' ? updateStickyColumnSize : undefined}
+          viewportRef={viewportRef}
           render={({ index }) => renderLeftStickyColumn({ columnIndex: index })}
         />
       )}
@@ -342,6 +418,8 @@ function VirtualGridInner(props: VirtualGridProps, ref: Ref<VirtualGridHandle>) 
           items={rightColumns}
           scrollOffsetX={currentScrollLeft}
           scrollOffsetY={currentScrollTop}
+          onMeasureItem={columns.sizeMode === 'dynamic' ? updateStickyColumnSize : undefined}
+          viewportRef={viewportRef}
           render={({ index }) => renderRightStickyColumn({ columnIndex: index })}
         />
       )}
@@ -352,6 +430,7 @@ function VirtualGridInner(props: VirtualGridProps, ref: Ref<VirtualGridHandle>) 
           height={topHeight}
           scrollOffsetX={currentScrollLeft}
           scrollOffsetY={currentScrollTop}
+          viewportRef={viewportRef}
           render={renderCorner}
         />
       )}
@@ -362,6 +441,7 @@ function VirtualGridInner(props: VirtualGridProps, ref: Ref<VirtualGridHandle>) 
           height={topHeight}
           scrollOffsetX={currentScrollLeft}
           scrollOffsetY={currentScrollTop}
+          viewportRef={viewportRef}
           render={renderCorner}
         />
       )}
@@ -372,6 +452,7 @@ function VirtualGridInner(props: VirtualGridProps, ref: Ref<VirtualGridHandle>) 
           height={bottomHeight}
           scrollOffsetX={currentScrollLeft}
           scrollOffsetY={currentScrollTop}
+          viewportRef={viewportRef}
           render={renderCorner}
         />
       )}
@@ -382,6 +463,7 @@ function VirtualGridInner(props: VirtualGridProps, ref: Ref<VirtualGridHandle>) 
           height={bottomHeight}
           scrollOffsetX={currentScrollLeft}
           scrollOffsetY={currentScrollTop}
+          viewportRef={viewportRef}
           render={renderCorner}
         />
       )}

@@ -1,5 +1,11 @@
 # @valeryan15/virtual-scroll
 
+## 0.1.2
+
+### Patch Changes
+
+- 1
+
 ## 0.1.1
 
 ### Patch Changes

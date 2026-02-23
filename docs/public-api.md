@@ -314,7 +314,7 @@ export function useVirtualGrid(args: {
 };
 ```
 
-Примечание по sticky + dynamic: в текущей реализации размеры sticky-зон рассчитываются по `itemSize`/`estimatedItemSize`; отдельные sticky-элементы не измеряются автоматически через `ResizeObserver`.
+Примечание по sticky + dynamic: sticky-зоны измеряются отдельно через `ResizeObserver`, и в расчете viewport/range используются фактические sticky extents (top/bottom/left/right), а не только `estimatedItemSize`.
 
 ---
 

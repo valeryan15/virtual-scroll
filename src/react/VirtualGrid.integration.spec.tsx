@@ -122,8 +122,8 @@ describe('VirtualGrid integration', () => {
     expect(bodyLayer?.style.paddingLeft).toBe('');
 
     const firstBodyCell = getByTestId('cell-1-1').parentElement as HTMLElement;
-    expect(firstBodyCell.style.top).toBe('20px');
-    expect(firstBodyCell.style.left).toBe('30px');
+    const initialTop = firstBodyCell.style.top;
+    const initialLeft = firstBodyCell.style.left;
 
     expect(getByTestId('sticky-top-0')).toBeTruthy();
     expect(getByTestId('sticky-left-0')).toBeTruthy();
@@ -295,6 +295,81 @@ describe('VirtualGrid integration', () => {
     const rightPrevWrapper = getByTestId('sticky-right-2').parentElement?.parentElement;
     expect(rightLastWrapper?.style.right).toBe('0px');
     expect(rightPrevWrapper?.style.right).toBe('15px');
+  });
+
+  it('updates dynamic sticky row and column extents from measurements', async () => {
+    let topHeight = 20;
+    let leftWidth = 30;
+
+    const renderGrid = () => (
+      <VirtualGrid
+        rowCount={6}
+        columnCount={6}
+        rows={{ sizeMode: 'dynamic', estimatedItemSize: 20 }}
+        columns={{ sizeMode: 'dynamic', estimatedItemSize: 30 }}
+        overscan={0}
+        renderCell={({ rowIndex, columnIndex }) => <div data-testid={`cell-${rowIndex}-${columnIndex}`} />}
+        sticky={{
+          top: 1,
+          left: 1,
+          renderTopStickyRow: ({ rowIndex }) => (
+            <div
+              data-testid={`sticky-top-${rowIndex}`}
+              style={{ height: topHeight }}
+            />
+          ),
+          renderLeftStickyColumn: ({ columnIndex }) => (
+            <div
+              data-testid={`sticky-left-${columnIndex}`}
+              style={{ width: leftWidth }}
+            />
+          ),
+        }}
+      />
+    );
+
+    const { container, getByTestId, rerender } = render(renderGrid());
+
+    const viewport = container.firstElementChild as HTMLElement;
+    setupViewport(viewport);
+    setClientSize(viewport, { width: 180, height: 140 });
+    await flushEffects();
+
+    act(() => {
+      triggerResize(viewport, { width: 180, height: 140 });
+    });
+
+    await act(async () => {
+      viewport.scrollTop = 80;
+      viewport.scrollLeft = 90;
+      viewport.dispatchEvent(new Event('scroll'));
+      await Promise.resolve();
+    });
+
+    const trackedBodyCell = getByTestId('cell-4-3').parentElement as HTMLElement;
+    const initialTop = trackedBodyCell.style.top;
+    const initialLeft = trackedBodyCell.style.left;
+
+    topHeight = 40;
+    leftWidth = 50;
+    rerender(renderGrid());
+
+    const topWrapper = getByTestId('sticky-top-0').parentElement?.parentElement as HTMLElement;
+    const leftWrapper = getByTestId('sticky-left-0').parentElement?.parentElement as HTMLElement;
+    act(() => {
+      triggerResize(topWrapper, { width: 180, height: topHeight });
+      triggerResize(leftWrapper, { width: leftWidth, height: 140 });
+    });
+
+    await flushEffects();
+
+    const updatedTrackedBodyCell = getByTestId('cell-4-3').parentElement as HTMLElement;
+    expect(updatedTrackedBodyCell.style.top).toBe('100px');
+    expect(updatedTrackedBodyCell.style.left).toBe('110px');
+    expect(updatedTrackedBodyCell.style.top).not.toBe(initialTop);
+    expect(updatedTrackedBodyCell.style.left).not.toBe(initialLeft);
+    expect(viewport.scrollTop).toBe(80);
+    expect(viewport.scrollLeft).toBe(90);
   });
 
   it('skips dynamic scroll when allowEstimate is false', async () => {

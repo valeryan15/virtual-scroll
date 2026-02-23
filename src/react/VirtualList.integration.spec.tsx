@@ -242,6 +242,79 @@ describe('VirtualList integration', () => {
     expect(queryByTestId('item-198')).toBeTruthy();
   });
 
+  it('updates dynamic sticky extents from measured layer sizes', async () => {
+    const listRef = React.createRef<VirtualListHandle>();
+    let topHeight = 20;
+    let bottomHeight = 20;
+    const items = Array.from({ length: 6 }, (_, index) => `Item ${index}`);
+
+    const renderList = () => (
+      <VirtualList
+        ref={listRef}
+        items={items}
+        itemKey={(item) => item}
+        renderItem={({ index }) => <div data-testid={`item-${index}`} />}
+        layout={{ sizeMode: 'dynamic', estimatedItemSize: 20 }}
+        overscan={0}
+        sticky={{
+          top: 1,
+          bottom: 1,
+          renderStickyTop: () => (
+            <div
+              data-testid='sticky-top-content'
+              style={{ height: `${topHeight}px` }}
+            />
+          ),
+          renderStickyBottom: () => (
+            <div
+              data-testid='sticky-bottom-content'
+              style={{ height: `${bottomHeight}px` }}
+            />
+          ),
+        }}
+      />
+    );
+
+    const { container, getByTestId, rerender } = render(renderList());
+    const viewport = container.firstElementChild as HTMLElement;
+    setupViewport(viewport);
+    setClientSize(viewport, { width: 200, height: 120 });
+    await flushEffects();
+
+    act(() => {
+      triggerResize(viewport, { width: 200, height: 120 });
+    });
+
+    expect((getByTestId('item-1').parentElement as HTMLElement).style.top).toBe('20px');
+
+    await act(async () => {
+      viewport.scrollTop = 50;
+      viewport.dispatchEvent(new Event('scroll'));
+      await Promise.resolve();
+    });
+
+    topHeight = 40;
+    bottomHeight = 30;
+    rerender(renderList());
+
+    const stickyTopLayerContent = container.querySelector('[data-virtual-layer="sticky-top"] > div') as HTMLElement;
+    const stickyBottomLayerContent = container.querySelector(
+      '[data-virtual-layer="sticky-bottom"] > div',
+    ) as HTMLElement;
+
+    act(() => {
+      triggerResize(stickyTopLayerContent, { width: 200, height: topHeight });
+      triggerResize(stickyBottomLayerContent, { width: 200, height: bottomHeight });
+    });
+
+    await flushEffects();
+
+    const bodyLayer = container.querySelector('[data-virtual-layer="body"]') as HTMLElement;
+    expect((getByTestId('item-2').parentElement as HTMLElement).style.top).toBe('60px');
+    expect(bodyLayer.style.height).toBe('150px');
+    expect(viewport.scrollTop).toBe(50);
+  });
+
   it('scrolls to index via imperative handle and clamps out-of-range values', async () => {
     const items = Array.from({ length: 10 }, (_, index) => `Item ${index}`);
     const listRef = React.createRef<VirtualListHandle>();
