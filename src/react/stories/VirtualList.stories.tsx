@@ -203,6 +203,52 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 type StoryListProps = VirtualListProps<ListItem>;
 
+type GroupedListRow = {
+  id: string;
+  kind: 'group' | 'item';
+  groupLabel: string;
+  label: string;
+};
+
+const createGroupedRows = (locale: StoryLocale): GroupedListRow[] => {
+  const rows: GroupedListRow[] = [];
+  const groupPrefix = locale === 'ru' ? 'Группа' : 'Group';
+  const childPrefix = locale === 'ru' ? 'Элемент' : 'Item';
+
+  for (let groupIndex = 1; groupIndex <= 24; groupIndex += 1) {
+    const groupLabel = `${groupPrefix} ${groupIndex}`;
+    rows.push({
+      id: `group-${groupIndex}`,
+      kind: 'group',
+      groupLabel,
+      label: groupLabel,
+    });
+
+    const childCount = 5 + (groupIndex % 4);
+    for (let childIndex = 1; childIndex <= childCount; childIndex += 1) {
+      rows.push({
+        id: `group-${groupIndex}-item-${childIndex}`,
+        kind: 'item',
+        groupLabel,
+        label: `${childPrefix} ${groupIndex}.${childIndex}`,
+      });
+    }
+  }
+
+  return rows;
+};
+
+const findActiveGroup = (rows: readonly GroupedListRow[], startIndex: number): GroupedListRow | undefined => {
+  const safeStart = Math.max(0, Math.min(startIndex, rows.length - 1));
+  for (let index = safeStart; index >= 0; index -= 1) {
+    if (rows[index]?.kind === 'group') {
+      return rows[index];
+    }
+  }
+
+  return rows[0];
+};
+
 const BaseList = ({
   locale,
   ...props
@@ -215,9 +261,7 @@ const BaseList = ({
       items={items}
       itemKey={(item) => item.id}
       renderItem={({ item, index }) => (
-        <div
-          style={{ ...itemStyle, height: props.layout?.sizeMode === 'dynamic' ? getListItemHeight(index) : '100%' }}
-        >
+        <div style={{ ...itemStyle, height: props.layout?.sizeMode === 'dynamic' ? getListItemHeight(index) : '100%' }}>
           {item.label}
         </div>
       )}
@@ -273,6 +317,149 @@ export const StickyHeaderFooter: Story = {
           ),
         }}
       />
+    );
+  },
+};
+
+export const DynamicStickyResize: Story = {
+  name: 'Dynamic sticky resize check',
+  render: (args: StoryListProps, context) => {
+    const locale = resolveStoryLocale(context.globals.locale);
+    const [isExpanded, setIsExpanded] = useState(false);
+
+    const topHeight = isExpanded ? 84 : 40;
+    const bottomHeight = isExpanded ? 68 : 36;
+
+    return (
+      <div>
+        <div style={{ marginBottom: 8, display: 'flex', alignItems: 'center', gap: 8, fontSize: 12 }}>
+          <button
+            type='button'
+            onClick={() => setIsExpanded((value) => !value)}
+            style={{ padding: '4px 10px', fontSize: 12, cursor: 'pointer' }}
+          >
+            {isExpanded ? 'Use compact sticky' : 'Use expanded sticky'}
+          </button>
+          <span style={{ color: '#555' }}>
+            top: {topHeight}px, bottom: {bottomHeight}px
+          </span>
+        </div>
+
+        <BaseList
+          {...args}
+          locale={locale}
+          layout={{ sizeMode: 'dynamic', estimatedItemSize: 36, direction: 'vertical' }}
+          sticky={{
+            top: 1,
+            bottom: 1,
+            renderStickyTop: ({ items }) => (
+              <div
+                style={{
+                  ...itemStyle,
+                  height: topHeight,
+                  background: '#fff7e6',
+                  fontWeight: 600,
+                  alignItems: 'flex-start',
+                  paddingTop: 8,
+                }}
+              >
+                {items[0]?.label} ({storyText.sticky(locale)})
+              </div>
+            ),
+            renderStickyBottom: ({ items }) => (
+              <div
+                style={{
+                  ...itemStyle,
+                  height: bottomHeight,
+                  background: '#f6ffed',
+                  fontWeight: 600,
+                  alignItems: 'flex-start',
+                  paddingTop: 8,
+                }}
+              >
+                {items[0]?.label} ({storyText.sticky(locale)})
+              </div>
+            ),
+          }}
+        />
+      </div>
+    );
+  },
+};
+
+export const GroupedStickyOnScroll: Story = {
+  name: 'Grouped list with sticky active group',
+  render: (_args: StoryListProps, context) => {
+    const locale = resolveStoryLocale(context.globals.locale);
+    const rows = useMemo(() => createGroupedRows(locale), [locale]);
+    const [activeGroupLabel, setActiveGroupLabel] = useState(() => findActiveGroup(rows, 0)?.groupLabel ?? '');
+
+    return (
+      <div style={{ position: 'relative', width: 320 }}>
+        <VirtualList
+          items={rows}
+          itemKey={(item) => item.id}
+          renderItem={({ item }) =>
+            item.kind === 'group' ? (
+              <div
+                style={{
+                  ...itemStyle,
+                  height: 36,
+                  background: '#e6f4ff',
+                  borderBottom: '1px solid #cde4ff',
+                  color: '#12325f',
+                  fontWeight: 700,
+                }}
+              >
+                {item.groupLabel}
+              </div>
+            ) : (
+              <div
+                style={{
+                  ...itemStyle,
+                  height: 32,
+                  paddingLeft: 28,
+                  color: '#2f3e52',
+                }}
+              >
+                {item.label}
+              </div>
+            )
+          }
+          layout={{ sizeMode: 'dynamic', estimatedItemSize: 32, direction: 'vertical' }}
+          overscan={0}
+          onRangeChange={({ items }) => {
+            const nextGroup = findActiveGroup(rows, items.start);
+            if (nextGroup) {
+              setActiveGroupLabel(nextGroup.groupLabel);
+            }
+          }}
+          style={viewportStyle}
+        />
+
+        <div
+          style={{
+            position: 'absolute',
+            left: 0,
+            right: 0,
+            top: 0,
+            height: 36,
+            display: 'flex',
+            alignItems: 'center',
+            padding: '0 12px',
+            boxSizing: 'border-box',
+            pointerEvents: 'none',
+            zIndex: 4,
+            background: '#d3ebff',
+            borderBottom: '1px solid #b7d9ff',
+            color: '#12325f',
+            fontSize: 13,
+            fontWeight: 700,
+          }}
+        >
+          {activeGroupLabel}
+        </div>
+      </div>
     );
   },
 };
