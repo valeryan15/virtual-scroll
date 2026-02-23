@@ -1,4 +1,4 @@
-# virtual-scroll
+# @valeryan15/virtual-scroll
 
 React + TypeScript библиотека для рендеринга больших списков с виртуализацией.
 
