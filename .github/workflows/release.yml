@@ -30,6 +30,9 @@ jobs:
       - name: Install dependencies
         run: yarn install --frozen-lockfile
 
+      - name: Install Playwright browsers
+        run: yarn playwright install --with-deps
+
       - name: Verify quality gates
         run: yarn typecheck && yarn lint && yarn test && yarn build
 
