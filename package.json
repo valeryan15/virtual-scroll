@@ -43,6 +43,8 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "test": "vitest run",
+    "test:e2e": "vitest run --project e2e",
+    "compat:react": "node scripts/react-compat-smoke.mjs",
     "changeset": "changeset",
     "version-packages": "changeset version",
     "release": "changeset publish --provenance",

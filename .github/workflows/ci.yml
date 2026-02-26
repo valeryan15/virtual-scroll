@@ -38,3 +38,36 @@ jobs:
 
       - name: Pack dry run
         run: npm pack --dry-run
+
+  react-compat:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - react-version: 16.14.0
+            expect: unsupported
+          - react-version: 17.0.2
+            expect: unsupported
+          - react-version: 18.3.1
+            expect: unsupported
+          - react-version: 19.2.0
+            expect: supported
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.21.1
+          cache: yarn
+
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: Build package
+        run: yarn build
+
+      - name: React compatibility smoke
+        run: yarn compat:react --react ${{ matrix.react-version }} --expect ${{ matrix.expect }}

@@ -37,6 +37,7 @@ jobs:
         run: yarn typecheck && yarn lint && yarn test && yarn build
 
       - name: Create release PR or publish
+        id: changesets
         uses: changesets/action@v1
         with:
           version: yarn version-packages
@@ -45,3 +46,17 @@ jobs:
           title: "chore: release packages"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create and push package version tag
+        if: steps.changesets.outputs.published == 'true'
+        run: |
+          VERSION="$(node -p "require('./package.json').version")"
+          TAG="v${VERSION}"
+
+          if git rev-parse "${TAG}" >/dev/null 2>&1; then
+            echo "Tag ${TAG} already exists"
+            exit 0
+          fi
+
+          git tag "${TAG}"
+          git push origin "${TAG}"

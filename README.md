@@ -10,10 +10,22 @@ React + TypeScript библиотека для рендеринга больши
 - Storybook для документации и Vitest для тестов.
 - Prettier для форматирования, TSLint для lint-проверок, Husky для git-хуков.
 
+## Совместимость React
+
+- Поддерживаемая версия: React/ReactDOM `19.x`.
+- React `16.x`, `17.x`, `18.x` не поддерживаются (runtime несовместимость с собранным `jsx` runtime).
+- Совместимость проверяется smoke-матрицей по версиям React в CI и локально скриптом:
+
+```bash
+yarn run compat:react --react 19.2.0 --expect supported
+yarn run compat:react --react 18.3.1 --expect unsupported
+```
+
 ## Документация
 
 - Обзор и архитектура: `docs/overview.md`
 - Публичный API: `docs/public-api.md`
+- Совместимость React: `docs/react-compatibility.md`
 - ADR: `docs/adr/`
 
 ## Установка
@@ -50,6 +62,8 @@ yarn run lint
 yarn run format
 yarn run format:check
 yarn run test
+yarn run test:e2e
+yarn run compat:react --react 19.2.0 --expect supported
 yarn run storybook
 yarn run changeset
 yarn run version-packages

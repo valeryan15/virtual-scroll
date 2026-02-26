@@ -37,6 +37,7 @@ export default defineConfig({
           environment: 'jsdom',
           setupFiles: ['vitest.setup.ts'],
           include: ['src/**/*.spec.{ts,tsx}'],
+          exclude: ['src/**/*.e2e.spec.{ts,tsx}'],
           globals: true,
         },
       },
@@ -62,6 +63,24 @@ export default defineConfig({
             ],
           },
           setupFiles: ['.storybook/vitest.setup.ts'],
+        },
+      },
+      {
+        extends: true,
+        test: {
+          name: 'e2e',
+          include: ['src/**/*.e2e.spec.{ts,tsx}'],
+          browser: {
+            enabled: true,
+            headless: true,
+            provider: playwright({}),
+            instances: [
+              {
+                browser: 'chromium',
+              },
+            ],
+          },
+          setupFiles: ['vitest.setup.ts'],
         },
       },
     ],
