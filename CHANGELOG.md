@@ -1,5 +1,11 @@
 # @valeryan15/virtual-scroll
 
+## 0.1.4
+
+### Patch Changes
+
+- a3aa285: Improve release and validation workflows by adding Playwright-based e2e coverage for core/stories, formalizing React compatibility policy in docs/CI, and auto-pushing `v<version>` git tags after successful publish.
+
 ## 0.1.3
 
 ### Patch Changes
