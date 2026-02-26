@@ -50,6 +50,7 @@ yarn run lint
 yarn run format
 yarn run format:check
 yarn run test
+yarn run test:e2e
 yarn run storybook
 yarn run changeset
 yarn run version-packages
